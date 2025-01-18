@@ -27,50 +27,43 @@ def get_project_fields_by_project_id(project_id):
     project_field_list = [project_field.to_dict() for project_field in project_fields]
     return ResponseTemplate.success(data=project_field_list, message='success')
 
-
 @jwt_required()
 def create_or_update_project_field(data):
-    """ 🔥 创建或更新项目字段记录，确保唯一 (`project_id`, `field_id`) 🔥 """
+    """ 🔥 增量更新项目字段，确保 (`project_id`, `field_id`) 唯一 🔥 """
 
-    project_id = data['project_id']
-    field_id = data['field_id']
-    is_checked = data.get('is_checked', False)  # ✅ 默认 `False`
+    project_id = data.get('project_id')
+    field_id = data.get('field_id')
 
-    # ✅ 先检查是否已存在相同 (`project_id`, `field_id`) 组合
+    if not project_id or not field_id:
+        return ResponseTemplate.error(message="Missing `project_id` or `field_id`", status=400)
+
+    # ✅ 检查是否已有记录
     existing_project_field = ProjectFieldValue.query.filter_by(project_id=project_id, field_id=field_id).first()
 
+    updatable_fields = [
+        "is_checked", "min_value", "typical_value", "max_value", "unit",
+        "custom_value", "image_path", "description","parent_id","code"
+    ]
+
     if existing_project_field:
-        # ✅ **已存在，则更新**
-        existing_project_field.is_checked = is_checked
-        existing_project_field.min_value = data.get('min_value')
-        existing_project_field.typical_value = data.get('typical_value')
-        existing_project_field.max_value = data.get('max_value')
-        existing_project_field.unit = data.get('unit')
-        existing_project_field.custom_value = data.get('custom_value')
-        existing_project_field.image_path = data.get('image_path')
-        existing_project_field.description = data.get('description')
+        # ✅ **已存在，则增量更新**
+        for field in updatable_fields:
+            if field in data and data[field] is not None:  # 只更新传入且非 None 的字段
+                setattr(existing_project_field, field, data[field])
 
         db.session.commit()
-        return ResponseTemplate.success(message='ProjectFieldValue updated successfully')
+        return ResponseTemplate.success(message="ProjectFieldValue updated successfully")
 
     else:
         # ✅ **如果不存在，则插入新数据**
         new_project_field = ProjectFieldValue(
             project_id=project_id,
             field_id=field_id,
-            is_checked=is_checked,
-            min_value=data.get('min_value'),
-            typical_value=data.get('typical_value'),
-            max_value=data.get('max_value'),
-            unit=data.get('unit'),
-            custom_value=data.get('custom_value'),
-            image_path=data.get('image_path'),
-            description=data.get('description')
+            **{field: data[field] for field in updatable_fields if field in data and data[field] is not None}
         )
         db.session.add(new_project_field)
         db.session.commit()
-        return ResponseTemplate.success(message='ProjectFieldValue created successfully')
-
+        return ResponseTemplate.success(message="ProjectFieldValue created successfully")
 
 @jwt_required()
 def delete_project_field(project_id, field_id):
@@ -101,3 +94,10 @@ def batch_create_or_update_project_fields(data_list):
     for data in data_list:
         create_or_update_project_field(data)  # 直接复用 `create_or_update_project_field()`
     return ResponseTemplate.success(message="Batch ProjectField update successful")
+
+@jwt_required()
+def get_project_fields_by_project_id_parent_id(project_id, parent_id):
+    """ 根据 project_id 获取所有关联的 ProjectFieldValue 记录 """
+    project_fields = ProjectFieldValue.query.filter_by(project_id=project_id,parent_id=parent_id).all()
+    project_field_list = [project_field.to_dict() for project_field in project_fields]
+    return ResponseTemplate.success(data=project_field_list, message='success')

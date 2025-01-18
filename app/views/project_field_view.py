@@ -56,3 +56,9 @@ def batch_create_or_update_project_fields():
     """ 🔥 批量创建或更新 ProjectField 记录 """
     data_list = request.json.get('fields', [])  # 接收多个字段
     return project_field_controller.batch_create_or_update_project_fields(data_list)
+
+
+@project_field_bp.route('/project/<int:project_id>/<int:parent_id>', methods=['GET'])
+def get_project_fields_by_project_id_parent_id(project_id,parent_id):
+    """ 根据 projectId 查询项目的所有字段 """
+    return project_field_controller.get_project_fields_by_project_id_parent_id(project_id,parent_id)

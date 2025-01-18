@@ -87,6 +87,8 @@ class ProjectFieldValue(db.Model):
     custom_value = db.Column(db.Text, nullable=True)  # ✅ 确保 `custom_value` 存在
     image_path = db.Column(db.String(500), nullable=True)
     description = db.Column(db.Text, nullable=True)
+    code = db.Column(db.String(100),  nullable=True)  # 速记码，唯一
+    parent_id = db.Column(db.Integer,nullable=True)
 
     def __repr__(self):
         return f"ProjectFieldValue(project_id={self.project_id}, field_id={self.field_id})"
@@ -104,6 +106,8 @@ class ProjectFieldValue(db.Model):
             'custom_value': self.custom_value,  # ✅ 需要包含 `custom_value`
             'image_path': self.image_path,
             'description': self.description,
+            'code': self.code,
+            'parent_id': self.parent_id,
         }
 
 
