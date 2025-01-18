@@ -43,6 +43,7 @@ def create_or_update_project_field(data):
     updatable_fields = [
         "is_checked", "min_value", "typical_value", "max_value", "unit",
         "custom_value", "image_path", "description","parent_id","code"
+        , "product_code", "quantity", "remarks"
     ]
 
     if existing_project_field:

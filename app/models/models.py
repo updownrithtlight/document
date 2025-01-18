@@ -89,6 +89,9 @@ class ProjectFieldValue(db.Model):
     description = db.Column(db.Text, nullable=True)
     code = db.Column(db.String(100),  nullable=True)  # 速记码，唯一
     parent_id = db.Column(db.Integer,nullable=True)
+    product_code = db.Column(db.String(255), nullable=True)
+    quantity = db.Column(db.String(255), nullable=True)
+    remarks = db.Column(db.Text, nullable=True)
 
     def __repr__(self):
         return f"ProjectFieldValue(project_id={self.project_id}, field_id={self.field_id})"
@@ -107,6 +110,9 @@ class ProjectFieldValue(db.Model):
             'image_path': self.image_path,
             'description': self.description,
             'code': self.code,
+            'product_code': self.product_code,
+            'quantity': self.quantity,
+            'remarks': self.remarks,
             'parent_id': self.parent_id,
         }
 
