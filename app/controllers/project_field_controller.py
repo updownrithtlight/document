@@ -109,3 +109,11 @@ def get_project_fields_by_project_id_parent_id(project_id, parent_id):
     project_fields = ProjectFieldValue.query.filter_by(project_id=project_id,parent_id=parent_id).all()
     project_field_list = [project_field.to_dict() for project_field in project_fields]
     return ResponseTemplate.success(data=project_field_list, message='success')
+
+
+@jwt_required()
+def get_project_field_by_project_id_field_id(project_id, field_id):
+    existing_project_field = ProjectFieldValue.query.filter_by(project_id=project_id, field_id=field_id).first()
+    if not existing_project_field:
+        return ResponseTemplate.error(message='ProjectFieldValue not found')
+    return ResponseTemplate.success(data=existing_project_field.to_dict(), message='success')

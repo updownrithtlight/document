@@ -21,11 +21,6 @@ def get_project_field(project_field_id):
     return project_field_controller.get_project_field(project_field_id)
 
 
-#
-# @project_field_bp.route('/<int:project_field_id>', methods=['PUT'])
-# def update_project_field(project_field_id):
-#     return project_field_controller.update_project_field(project_field_id, request.json)
-
 
 @project_field_bp.route('/<int:project_field_id>', methods=['DELETE'])
 def delete_project_field(project_field_id):
@@ -43,6 +38,11 @@ def get_project_fields_by_project_id(project_id):
 def delete_project_field_by_project_and_field(project_id, field_id):
     """ 根据 `project_id` 和 `field_id` 删除 """
     return project_field_controller.delete_project_field(project_id, field_id)
+
+
+@project_field_bp.route('/<int:project_id>/field/<int:field_id>', methods=['GET'])
+def get_project_field_by_project_id_field_id(project_id, field_id):
+    return project_field_controller.get_project_field_by_project_id_field_id(project_id, field_id)
 
 
 @project_field_bp.route('/<int:field_value_id>', methods=['DELETE'])
