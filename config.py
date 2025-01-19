@@ -26,6 +26,8 @@ class Config:
     UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')  # 上传文件的目录路径
     TEMPLATE_FOLDER = os.path.join(UPLOAD_FOLDER, 'template')  # 存放模板文件的子目录
     OUTPUT_FOLDER = os.path.join(UPLOAD_FOLDER, 'output')  # 存放生成文件的子目录
+    FIELD_IMAGES_FOLDER = os.path.join(UPLOAD_FOLDER, 'field_images')  # 存放模板文件的子目录
+    IMAGES_FOLDER = os.path.join(UPLOAD_FOLDER, 'images')  # 存放模板文件的子目录
 
 
 

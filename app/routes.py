@@ -8,6 +8,8 @@ from app.views.field_option_view import field_option_bp
 from app.views.project_material_view import project_material_bp
 from app.views.excel_view import excel_bp
 from app.views.word_view import word_bp
+from app.views.file_view import file_bp  # 新增文件管理路由
+
 
 
 def setup_routes(app):
@@ -21,3 +23,4 @@ def setup_routes(app):
     app.register_blueprint(project_material_bp)
     app.register_blueprint(excel_bp)
     app.register_blueprint(word_bp)
+    app.register_blueprint(file_bp)  # 注册文件管理蓝图
