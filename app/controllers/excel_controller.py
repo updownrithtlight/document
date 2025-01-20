@@ -8,7 +8,7 @@ from app.controllers.project_material_controller import get_project_materials_in
 import openpyxl
 from openpyxl.styles import Border, Side, Alignment
 # 模板路径
-TEMPLATE_PATH = os.path.join(app.config['TEMPLATE_FOLDER'], "template.xlsx")
+TEMPLATE_PATH = os.path.join(app.config['TEMPLATE_FOLDER'], "materialtabletemplate.xlsx")
 
 
 

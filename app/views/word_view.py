@@ -4,8 +4,11 @@ from app.controllers import word_controller
 word_bp = Blueprint('word', __name__, url_prefix='/api/word')
 
 
+@word_bp.route('/tech_manual/<int:project_id>', methods=['GET'])
+def generate_tech_manual(project_id):
+    return word_controller.generate_tech_manual(project_id)  # 生成技术说明书
 
-@word_bp.route('/<int:project_id>', methods=['GET'])
-def generate_word(project_id):
-    return word_controller.generate_word(project_id)
 
+@word_bp.route('/product_spec/<int:project_id>', methods=['GET'])
+def generate_product_spec(project_id):
+    return word_controller.generate_product_spec(project_id)  # 生成产品规范

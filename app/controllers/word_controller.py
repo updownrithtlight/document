@@ -13,10 +13,11 @@ from docx import Document
 
 # **模板文件路径**
 TEMPLATE_PATH = os.path.join(app.config['TEMPLATE_FOLDER'], "technical_document_template.docx")
+PRODUCT_SPECIFICATION_TEMPLATE_PATH = os.path.join(app.config['TEMPLATE_FOLDER'], "product_specification.docx.docx")
 
 
 @jwt_required()
-def generate_word(project_id):
+def generate_tech_manual(project_id):
     """
     生成产品规范 Word 文档
     """
@@ -125,3 +126,41 @@ def replace_docx_text(xml_path, replacements):
 
     with open(xml_path, "w", encoding="utf-8") as f:
         f.write(xml_content)
+
+
+
+
+@jwt_required()
+def generate_product_spec(project_id):
+    """
+    生成产品规范 Word 文档
+    """
+    try:
+        project = Project.query.get(project_id)
+        if not project:
+            return jsonify({"error": "项目不存在"}), 404
+
+        project_field_list = get_list_by_project_id(project_id)
+        # **提取参数**
+
+        # **生成文件路径**
+        output_file_name = f"{project.project_model}_产品规范.docx"
+        output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_file_name)
+
+        # **填充 Word 模板**
+        fill_product_spec_template(PRODUCT_SPECIFICATION_TEMPLATE_PATH, output_path, project, project_field_list)
+
+        # **URL 编码文件名，避免中文乱码**
+        encoded_file_name = quote(output_file_name)
+
+        # **返回文件**
+        response = send_file(
+            output_path,
+            as_attachment=True,
+            mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
+        response.headers["Content-Disposition"] = f"attachment; filename*=UTF-8''{encoded_file_name}"
+        return response
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
