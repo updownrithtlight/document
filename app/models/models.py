@@ -236,3 +236,94 @@ class ProjectMaterial(db.Model):
             'material_id': self.material_id,
             'created_at': self.created_at,
         }
+
+
+
+class TechnicalFeature(db.Model):
+    """ 技术特点数据表（数据源） """
+    __tablename__ = "t_technical_features"
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    label = db.Column(db.String(255), nullable=False, comment="技术特点描述")
+
+    def __repr__(self):
+        return f"TechnicalFeature(id={self.id}, label='{self.label}')"
+
+    def to_dict(self):
+        """ 转换为 JSON 格式 """
+        return {
+            "id": self.id,
+            "label": self.label,
+        }
+
+
+class ProjectFeature(db.Model):
+    """ 关联项目与技术特点，并存储排序 """
+    __tablename__ = "t_project_features"
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    project_id = db.Column(db.Integer, db.ForeignKey("t_projects.id", ondelete="CASCADE"), nullable=False, comment="项目 ID")
+    feature_id = db.Column(db.Integer, db.ForeignKey("t_technical_features.id", ondelete="CASCADE"), nullable=False, comment="技术特点 ID")
+    sort_order = db.Column(db.Integer, nullable=False, comment="排序顺序")
+
+    # 关系映射
+    project = db.relationship("Project", backref=db.backref("project_features", cascade="all, delete-orphan", lazy="joined"))
+    feature = db.relationship("TechnicalFeature", backref=db.backref("feature_projects", cascade="all, delete-orphan", lazy="joined"))
+
+    def __repr__(self):
+        return f"ProjectFeature(project_id={self.project_id}, feature_id={self.feature_id}, sort_order={self.sort_order})"
+
+    def to_dict(self):
+        """ 转换为 JSON 格式 """
+        return {
+            "id": self.id,
+            "project_id": self.project_id,
+            "feature_id": self.feature_id,
+            "sort_order": self.sort_order,
+            "feature_label": self.feature.label if self.feature else None  # 关联技术特点名称
+        }
+
+
+class ImportantNote(db.Model):
+    """ 技术特点数据表（数据源） """
+    __tablename__ = "t_important_notes"
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    label = db.Column(db.String(255), nullable=False, comment="技术特点描述")
+
+    def __repr__(self):
+        return f"ImportantNote(id={self.id}, label='{self.label}')"
+
+    def to_dict(self):
+        """ 转换为 JSON 格式 """
+        return {
+            "id": self.id,
+            "label": self.label,
+        }
+
+
+class ProjectImportantNote(db.Model):
+    """ 关联项目与技术特点，并存储排序 """
+    __tablename__ = "t_project_important_notes"
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    project_id = db.Column(db.Integer, db.ForeignKey("t_projects.id", ondelete="CASCADE"), nullable=False, comment="项目 ID")
+    note_id = db.Column(db.Integer, db.ForeignKey("t_important_notes.id", ondelete="CASCADE"), nullable=False, comment="技术特点 ID")
+    sort_order = db.Column(db.Integer, nullable=False, comment="排序顺序")
+
+    # 关系映射
+    project = db.relationship("Project", backref=db.backref("project_important_notes", cascade="all, delete-orphan", lazy="joined"))
+    note = db.relationship("ImportantNote", backref=db.backref("note_projects", cascade="all, delete-orphan", lazy="joined"))
+
+    def __repr__(self):
+        return f"ProjectImportantNote(project_id={self.project_id}, note_id={self.note_id}, sort_order={self.sort_order})"
+
+    def to_dict(self):
+        """ 转换为 JSON 格式 """
+        return {
+            "id": self.id,
+            "project_id": self.project_id,
+            "note_id": self.note_id,
+            "sort_order": self.sort_order,
+            "note_label": self.note.label if self.note else None  # 关联技术特点名称
+        }
