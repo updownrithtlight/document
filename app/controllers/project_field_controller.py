@@ -117,3 +117,11 @@ def get_project_field_by_project_id_field_id(project_id, field_id):
     if not existing_project_field:
         return ResponseTemplate.error(message='ProjectFieldValue not found')
     return ResponseTemplate.success(data=existing_project_field.to_dict(), message='success')
+
+
+
+
+def get_list_by_project_id(project_id):
+    """ 根据 project_id 获取所有关联的 ProjectFieldValue 记录 """
+    project_fields = ProjectFieldValue.query.filter_by(project_id=project_id).all()
+    return [project_field.to_dict() for project_field in project_fields]

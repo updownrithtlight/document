@@ -3,7 +3,7 @@ from flask import jsonify, send_file, request
 from flask_jwt_extended import jwt_required
 from urllib.parse import quote
 from app import app
-from app.controllers.project_field_controller import get_project_fields_by_project_id
+from app.controllers.project_field_controller import get_list_by_project_id
 from app.models.models import Project
 import os
 import zipfile
@@ -25,7 +25,7 @@ def generate_word(project_id):
         if not project:
             return jsonify({"error": "项目不存在"}), 404
 
-        project_field_list = get_project_fields_by_project_id(project_id)
+        project_field_list = get_list_by_project_id(project_id)
         # **提取参数**
 
         # **生成文件路径**
@@ -59,9 +59,19 @@ def fill_product_spec_template(template_path, output_path, project, field_list):
     """
     temp_dir = output_path.replace(".docx", "_temp")  # 创建临时目录
     unzip_docx(template_path, temp_dir)  # 解压原始 .docx
+    print("🔍 field_list 类型:", type(field_list))
 
+    if field_list:
+        print("🔍 field_list 第一个元素类型:", type(field_list[0]))
+        print("🔍 field_list 第一个元素:", field_list[0])
+    else:
+        print("⚠️ field_list 为空列表")
     # **构建字段映射**
-    field_dict = {f"{{{{POWER_{field.field_id.upper()}}}}}": field.value or field.custom_value for field in field_list}
+    field_dict = {
+        f"{{{{POWER_{(field.get('code') or 'UNKNOWN').upper()}}}}}": field.get('value') or field.get('custom_value') or 'test'
+        for field in field_list
+    }
+
     project_placeholders = {
         "{{project_model}}": project.project_model,
         "{{project_name}}": project.project_name,
