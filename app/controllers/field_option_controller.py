@@ -1,6 +1,7 @@
 from app import db, jwt_required, logger
 from app.models.result import ResponseTemplate
 from app.models.models import FieldOption
+from app.exceptions.exceptions import CustomAPIException
 
 
 @jwt_required()
@@ -14,7 +15,7 @@ def get_field_option_list():
 def get_field_option(field_option_id):
     field_option = FieldOption.query.get(field_option_id)  # 根据 ID 获取字段选项
     if not field_option:
-        return ResponseTemplate.error(message='FieldOption not found')
+        raise CustomAPIException("FieldDefinition not found", 404)
     return ResponseTemplate.success(data=field_option.to_dict(), message='success')
 
 
@@ -35,7 +36,7 @@ def create_field_option(data):
 def update_field_option(field_option_id, data):
     field_option = FieldOption.query.get(field_option_id)
     if not field_option:
-        return ResponseTemplate.error(message='FieldOption not found')
+        raise CustomAPIException("FieldDefinition not found", 404)
 
     field_option.field_id = data['field_id']
     field_option.parent_id = data.get('parent_id')  # 更新父 ID
@@ -50,7 +51,7 @@ def update_field_option(field_option_id, data):
 def delete_field_option(field_option_id):
     field_option = FieldOption.query.get(field_option_id)
     if not field_option:
-        return ResponseTemplate.error(message='FieldOption not found')
+        raise CustomAPIException("FieldDefinition not found", 404)
     db.session.delete(field_option)
     db.session.commit()
     return ResponseTemplate.success(message='FieldOption deleted successfully')

@@ -11,9 +11,11 @@ from app.views.word_view import word_bp
 from app.views.file_view import file_bp  # 新增文件管理路由
 from app.views.project_feature_view import project_feature_bp  # 新增文件管理路由
 from app.views.technical_feature_view import feature_bp  # 新增文件管理路由
-
 from app.views.project_important_notes_view import project_important_notes_bp
 from app.views.important_notes_view import important_notes_bp
+from app.views.user_view import user_bp
+from app.views.role_view import role_bp
+
 
 def setup_routes(app):
     app.register_blueprint(auth_bp)
@@ -30,4 +32,7 @@ def setup_routes(app):
     app.register_blueprint(project_feature_bp)
     app.register_blueprint(important_notes_bp)
     app.register_blueprint(project_important_notes_bp)
-    app.register_blueprint(file_bp)  # 注册文件管理蓝图
+    app.register_blueprint(file_bp)
+    app.register_blueprint(role_bp)
+    app.register_blueprint(user_bp)  # 注册用户 API
+

@@ -1,4 +1,5 @@
 from app import db, jwt_required, logger
+from app.exceptions.exceptions import CustomAPIException
 from app.models.result import ResponseTemplate
 from app.models.models import ProjectFieldValue
 import json
@@ -27,6 +28,8 @@ def get_project_fields_by_project_id(project_id):
     project_fields = ProjectFieldValue.query.filter_by(project_id=project_id).all()
     project_field_list = [project_field.to_dict() for project_field in project_fields]
     return ResponseTemplate.success(data=project_field_list, message='success')
+
+
 @jwt_required()
 def create_or_update_project_field(data):
     """ 🔥 增量更新项目字段，确保 (`project_id`, `field_id`) 唯一 🔥 """
@@ -78,7 +81,8 @@ def delete_project_field(project_id, field_id):
     """ 🔥 根据 (`project_id`, `field_id`) 删除项目字段记录 """
     project_field = ProjectFieldValue.query.filter_by(project_id=project_id, field_id=field_id).first()
     if not project_field:
-        return ResponseTemplate.error(message='ProjectFieldValue not found')
+        raise CustomAPIException("ProjectFieldValue not found", 404)
+
 
     db.session.delete(project_field)
     db.session.commit()
@@ -89,7 +93,8 @@ def delete_project_field_by_id(field_value_id):
     """ 🔥 根据 `id` 删除项目字段记录 """
     project_field = ProjectFieldValue.query.get(field_value_id)
     if not project_field:
-        return ResponseTemplate.error(message='ProjectFieldValue not found')
+        raise CustomAPIException("ProjectFieldValue not found", 500)
+
 
     db.session.delete(project_field)
     db.session.commit()

@@ -22,6 +22,11 @@ CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://local
 from app.routes import setup_routes
 setup_routes(app)
 
+# 自动创建表（仅开发环境）
+with app.app_context():
+    db.create_all()
+    logger.info("✅ 数据库表已创建")
+
 # 捕获 SQLAlchemy 的日志，并输出 SQL 语句
 logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 

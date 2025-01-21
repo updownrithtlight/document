@@ -11,7 +11,7 @@ def register():
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
-    return (auth_controller.login())
+    return auth_controller.login()
 
 
 

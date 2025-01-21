@@ -1,6 +1,8 @@
 from flask import request
 from app import db, logger
 from flask_jwt_extended import jwt_required
+
+from app.exceptions.exceptions import CustomAPIException
 from app.models.result import ResponseTemplate
 from app.models.models import Project, ProjectMaterial
 
@@ -128,7 +130,8 @@ def delete_project(project_id):
 
     project = Project.query.get(project_id)
     if not project:
-        return ResponseTemplate.error(message='Project not found')
+        raise CustomAPIException("数据库操作失败，请检查数据格式或联系管理员", 500)
+
 
     db.session.delete(project)
     db.session.commit()

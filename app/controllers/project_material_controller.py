@@ -1,5 +1,6 @@
 from flask import request
 from app import db, jwt_required, logger
+from app.exceptions.exceptions import CustomAPIException
 from app.models.result import ResponseTemplate
 from app.models.models import ProjectMaterial, MaterialInfo
 
@@ -64,7 +65,8 @@ def save_project_material():
         material_id = data.get('material_id')
 
         if not project_id or not material_id:
-            return ResponseTemplate.error(message='Project ID and Material ID are required')
+            raise CustomAPIException("Project ID and Material ID are required", 404)
+
 
         # 检查是否已存在
         existing = ProjectMaterial.query.filter_by(project_id=project_id, material_id=material_id).first()
@@ -101,7 +103,8 @@ def remove_project_material(material_id):
         # 查询对应的 ProjectMaterial
         project_material = ProjectMaterial.query.filter_by(project_id=project_id, material_id=material_id).first()
         if not project_material:
-            return ResponseTemplate.error(message='Material not found in the project')
+            raise CustomAPIException("Material not found in the project", 404)
+
 
         # 删除记录
         db.session.delete(project_material)
@@ -114,7 +117,8 @@ def remove_project_material(material_id):
     except Exception as e:
         logger.error(f"Error removing project material: {e}")
         db.session.rollback()
-        return ResponseTemplate.error(message='Failed to remove material')
+        raise CustomAPIException("Material not found in the project", 404)
+
 
 
 def get_project_materials_info(project_id):

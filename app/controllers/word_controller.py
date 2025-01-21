@@ -4,6 +4,7 @@ from flask_jwt_extended import jwt_required
 from urllib.parse import quote
 from app import app
 from app.controllers.project_field_controller import get_list_by_project_id
+from app.exceptions.exceptions import CustomAPIException
 from app.models.models import Project
 import os
 import zipfile
@@ -49,7 +50,7 @@ def generate_tech_manual(project_id):
         return response
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        raise CustomAPIException("Material not found in the project", 404)
 
 
 

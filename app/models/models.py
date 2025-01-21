@@ -1,26 +1,6 @@
 from app import db
 from sqlalchemy.dialects.mysql import ENUM
 
-class User(db.Model):
-    __tablename__ = 't_users'
-
-    user_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    user_fullname = db.Column(db.String(100), nullable=False)
-    password = db.Column(db.String(255), nullable=False)
-    username = db.Column(db.String(100), nullable=False, unique=True)
-    created_at = db.Column(db.TIMESTAMP, nullable=False, server_default=db.func.current_timestamp())
-
-    def __repr__(self):
-        return f"User('{self.username}', '{self.user_id}', '{self.user_fullname}')"
-
-    def to_dict(self):
-        return {
-            'user_id': self.user_id,
-            'user_fullname': self.user_fullname,
-            'username': self.username,
-            'created_at': self.created_at,
-        }
-
 
 
 class FieldOption(db.Model):
@@ -183,36 +163,6 @@ class FieldDefinition(db.Model):
         return data
 
 
-class Menu(db.Model):
-    __tablename__ = 't_menu_item'
-
-    id = db.Column(db.BigInteger, primary_key=True, autoincrement=True)
-    created_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now())
-    created_by = db.Column(db.String(255), default=None)
-    updated_at = db.Column(db.DateTime(timezone=True), server_default=db.func.now(), onupdate=db.func.now())
-    updated_by = db.Column(db.String(255), default=None)
-    component = db.Column(db.String(255), nullable=False)
-    icon = db.Column(db.String(255), default=None)
-    name = db.Column(db.String(255), nullable=False)
-    path = db.Column(db.String(255), nullable=False)
-    parent_id = db.Column(db.BigInteger, db.ForeignKey('t_menu_item.id'))
-
-    parent_menu = db.relationship('Menu', remote_side=[id], backref='children', lazy='subquery')
-
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'created_at': self.created_at,
-            'created_by': self.created_by,
-            'updated_at': self.updated_at,
-            'updated_by': self.updated_by,
-            'component': self.component,
-            'icon': self.icon,
-            'name': self.name,
-            'path': self.path,
-            'parent_id': self.parent_id,
-        }
-
 
 class ProjectMaterial(db.Model):
     __tablename__ = 't_project_material'
@@ -327,3 +277,5 @@ class ProjectImportantNote(db.Model):
             "sort_order": self.sort_order,
             "note_label": self.note.label if self.note else None  # 关联技术特点名称
         }
+
+

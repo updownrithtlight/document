@@ -1,5 +1,6 @@
 from flask import request
 from app import db, jwt_required, logger, app
+from app.exceptions.exceptions import CustomAPIException
 from app.models.result import ResponseTemplate
 from app.models.models import MaterialInfo
 import os
@@ -209,9 +210,7 @@ def import_materials():
             "计量单位": "unit"
         }
         if not set(column_mapping.keys()).issubset(df.columns):
-            return ResponseTemplate.error(
-                message=f"文件缺少必要列，必须包含: {list(column_mapping.keys())}"
-            )
+            raise CustomAPIException("文件缺少必要列，必须包含", 500)
 
         # **重命名列**
         df = df.rename(columns=column_mapping)
@@ -235,11 +234,12 @@ def import_materials():
     except SQLAlchemyError as e:
         db.session.rollback()
         logger.error(f"数据库错误: {str(e)}")
-        return ResponseTemplate.error(message="数据库操作失败，请检查数据格式或联系管理员")
+        raise CustomAPIException("数据库操作失败，请检查数据格式或联系管理员", 500)
+
 
     except Exception as e:
         logger.error(f"数据导入失败: {str(e)}")
-        return ResponseTemplate.error(message=f"导入失败: {str(e)}")
+        raise CustomAPIException("导入失败", 500)
 
     finally:
         os.remove(file_path)  # **清理临时文件**

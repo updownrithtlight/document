@@ -3,6 +3,7 @@ from flask import jsonify, send_file
 from flask_jwt_extended import jwt_required
 from urllib.parse import quote
 from app import app
+from app.exceptions.exceptions import CustomAPIException
 from app.models.models  import Project  # 假设 Project 模型在 models 模块中
 from app.controllers.project_material_controller import get_project_materials_info
 import openpyxl
@@ -57,7 +58,7 @@ def generate_excel(project_id):
         response.headers["Content-Disposition"] = f"attachment; filename*=UTF-8''{encoded_file_name}"
         return response
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        raise CustomAPIException("Material not found in the project", 404)
 
 
 

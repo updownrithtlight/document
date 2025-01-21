@@ -1,4 +1,5 @@
 from app import db, jwt_required, logger
+from app.exceptions.exceptions import CustomAPIException
 from app.models.result import ResponseTemplate
 from app.models.models import ProjectImportantNote
 
@@ -36,4 +37,5 @@ def save_project_important_notes(project_id, data):
     except Exception as e:
         db.session.rollback()
         logger.error(f"保存项目技术特点失败: {str(e)}")
-        return ResponseTemplate.error(message="保存失败，请重试！")
+        raise CustomAPIException("保存失败，请重试！", 404)
+

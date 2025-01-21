@@ -3,6 +3,8 @@ from flask import jsonify, request, send_file
 from werkzeug.utils import secure_filename
 from urllib.parse import quote
 from datetime import datetime
+
+from app.exceptions.exceptions import CustomAPIException
 from app.models.result import ResponseTemplate
 from config import Config
 
@@ -47,8 +49,7 @@ def upload_file():
             message="文件上传成功",
             data={"fileName": unique_filename, "url": file_url}
         )
-
-    return ResponseTemplate.error("文件上传失败，不支持的文件类型")
+    raise CustomAPIException("文件上传失败，不支持的文件类型", 500)
 
 
 def download_file(filename):
@@ -72,7 +73,7 @@ def delete_file(filename):
         os.remove(file_path)
         return ResponseTemplate.success(message="文件删除成功", data={"fileName": "","url":""})
 
-    return ResponseTemplate.error("文件上传失败")
+    raise CustomAPIException("文件上传失败", 404)
 
 
 def preview_file(filename):
