@@ -14,4 +14,4 @@ def print_word_footers(template_path):
         else:
             print("  🚨 该页没有页脚！")
 
-print_word_footers("technical_document_template.docx")
+print_word_footers("../template/technical_document_template.docx")

@@ -117,3 +117,39 @@ def fill_excel_template(template_path, output_path, product_info, data):
     # **保存 Excel 文件**
     wb.save(output_path)
     print(f"文件已保存到: {output_path}")
+
+
+
+def generate_excel_local(project_id):
+    try:
+        # 从数据库获取项目数据
+        project = Project.query.get(project_id)
+        if not project:
+            return jsonify({"error": "项目不存在"}), 404
+
+        # 获取项目关联的材料列表
+        material_list = get_project_materials_info(project_id)
+        if not material_list:
+            return jsonify({"error": "材料列表为空"}), 400
+
+        # 提取项目信息
+        product_info = {
+            "产品名称": project.project_name,
+            "产品型号": project.project_model,
+            "成品规格": project.project_type,
+            "文件编号": project.file_number,
+            "产品等级": "N/A",
+            "产品编号": project.product_number,
+        }
+
+        # 动态生成输出文件名称
+        product_model = project.project_model or "未命名产品"
+        product_number = project.product_number or "未命名编号"
+        output_file_name = f"{product_model}_BOM物料表{product_number}.xlsx"
+        output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_file_name)
+
+        # 调用填充函数
+        fill_excel_template(TEMPLATE_PATH, output_path, product_info, material_list)
+        return output_path
+    except Exception as e:
+        raise CustomAPIException("Material not found in the project", 404)

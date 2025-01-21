@@ -5,8 +5,8 @@ import os
 SOFFICE_PATH = r"C:\noneSystem\bj\LibreOfficePortable\App\libreoffice\program\soffice.exe"
 
 # 原始 .xls 文件和转换后的 .xlsx 文件路径
-xls_file_path = r"C:\noneSystem\bj\document\uploads\template\物料档案维护20250117.xls"  # 你的 .xls 文件路径
-output_dir = r"C:\noneSystem\bj\document\uploads\template\converted"  # 转换后的文件存放目录
+xls_file_path = r"/uploads/template/物料档案维护20250117.xls"  # 你的 .xls 文件路径
+output_dir = r"/uploads/template/converted"  # 转换后的文件存放目录
 
 # 确保输出目录存在
 os.makedirs(output_dir, exist_ok=True)

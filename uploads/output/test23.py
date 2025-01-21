@@ -11,4 +11,4 @@ def extract_footer_xml(docx_path):
                 root = etree.XML(xml_content)
                 print(etree.tostring(root, pretty_print=True, encoding='utf-8').decode('utf-8'))
 
-extract_footer_xml("technical_document_template.docx")
+extract_footer_xml("../template/technical_document_template.docx")

@@ -32,4 +32,4 @@ replacements = {
     "{{file_number}}": "221226-ABC"
 }
 
-replace_word_xml("technical_document_template.docx", "output.docx", replacements)
+replace_word_xml("../template/technical_document_template.docx", "output.docx", replacements)
