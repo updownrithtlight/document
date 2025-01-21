@@ -15,6 +15,9 @@ from app.views.project_important_notes_view import project_important_notes_bp
 from app.views.important_notes_view import important_notes_bp
 from app.views.user_view import user_bp
 from app.views.role_view import role_bp
+from app.views.inspection_view import inspection_bp
+
+
 
 
 def setup_routes(app):
@@ -34,5 +37,6 @@ def setup_routes(app):
     app.register_blueprint(project_important_notes_bp)
     app.register_blueprint(file_bp)
     app.register_blueprint(role_bp)
+    app.register_blueprint(inspection_bp)
     app.register_blueprint(user_bp)  # 注册用户 API
 
