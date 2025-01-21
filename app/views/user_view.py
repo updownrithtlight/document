@@ -3,7 +3,7 @@ from app.controllers import user_controller
 
 user_bp = Blueprint('user', __name__, url_prefix='/api/users')
 
-@user_bp.route('/', methods=['GET'])
+@user_bp.route('', methods=['GET'])
 def get_users():
     return user_controller.get_users()
 
@@ -11,7 +11,7 @@ def get_users():
 def get_user(user_id):
     return user_controller.get_user(user_id)
 
-@user_bp.route('/', methods=['POST'])
+@user_bp.route('', methods=['POST'])
 def create_user():
     data = request.json
     return user_controller.create_user(data)

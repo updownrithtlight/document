@@ -1,3 +1,4 @@
+from flask import request
 from flask_jwt_extended import jwt_required
 from app import db
 from app.exceptions.exceptions import CustomAPIException
@@ -6,18 +7,52 @@ from app.models.role import Role
 from app.models.user import User
 from app.middleware.authorization import role_required
 
-# 获取所有用户（仅管理员可操作）
+
+
+
 @jwt_required()
 @role_required("admin")
 def get_users():
-    try:
-        users = User.query.all()
-        return ResponseTemplate.success(
-            data=[user.to_dict() for user in users],
-            message="User list retrieved successfully"
-        )
-    except Exception as e:
-        raise CustomAPIException("Material not found in the project", 404)
+    """分页查询和组合搜索项目列表"""
+    # 获取分页参数
+    page = request.args.get('page', 1, type=int)  # 当前页码，默认为第 1 页
+    per_page = request.args.get('pageSize', 10, type=int)  # 每页显示的记录数，默认为 10 条
+
+    # 获取搜索参数
+    username = request.args.get('username', '').strip()
+    user_fullname = request.args.get('user_fullname', '').strip()
+    status = request.args.get('status', '').strip()
+
+    # 构建查询
+    query = User.query
+    # 动态添加过滤条件
+    if user_fullname:
+        query = query.filter(User.user_fullname.ilike(f"%{user_fullname}%"))
+    if status:
+        query = query.filter(User.status == status)
+    if username:
+        query = query.filter(User.username.ilike(f"%{username}%"))
+
+    # 查询数据库并分页
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+    projects = pagination.items  # 当前页的项目列表
+
+    # 转换为字典格式
+    user_list = [project.to_dict() for project in projects]
+
+    # 返回分页信息
+    return ResponseTemplate.success(
+        data={
+            'users': user_list,
+            'totalElements': pagination.total,  # 总记录数
+            'pages': pagination.pages,  # 总页数
+            'page': pagination.page,  # 当前页码
+            'pageSize': pagination.per_page,  # 每页显示的记录数
+        },
+        message='success'
+    )
+
+
 
 
 # 获取单个用户（仅管理员可操作）
