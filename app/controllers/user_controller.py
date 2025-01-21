@@ -202,3 +202,38 @@ def enable_user(user_id):
     except Exception as e:
         db.session.rollback()
         raise CustomAPIException("Material not found in the project", 404)
+
+
+
+
+@jwt_required()
+@role_required("admin")
+def update_user_roles(user_id):
+    """
+    更新用户的角色
+    :param user_id: 用户 ID
+    :return: 更新后的用户信息
+    """
+    try:
+        new_role_ids = request.json
+        # new_role_ids = data.get("role_ids", [])  # 接收前端传递的角色 ID 列表
+
+        # 获取用户对象
+        user = User.query.get(user_id)
+        if not user:
+            raise CustomAPIException("User not found", 404)
+
+        # 查询新的角色对象
+        roles = Role.query.filter(Role.id.in_(new_role_ids)).all()
+
+        # 更新用户角色
+        user.roles = roles
+        db.session.commit()
+
+        return ResponseTemplate.success(
+            data=user.to_dict(),
+            message="User roles updated successfully"
+        )
+    except Exception as e:
+        db.session.rollback()
+        raise CustomAPIException(f"Failed to update user roles: {str(e)}", 500)

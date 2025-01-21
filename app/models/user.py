@@ -1,3 +1,5 @@
+import pytz
+
 from app import db, bcrypt
 from app.models.role import Role, t_user_roles
 
@@ -30,11 +32,13 @@ class User(db.Model):
         return any(role.name == role_name for role in self.roles)
 
     def to_dict(self):
+        china_tz = pytz.timezone('Asia/Shanghai')  # 设置中国时区
+        created_time = self.created_at.astimezone(china_tz).strftime('%Y-%m-%d %H:%M:%S') if self.created_at else None
         return {
             'user_id': self.user_id,
             'user_fullname': self.user_fullname,
             'username': self.username,
             'roles': [role.name for role in self.roles],  # 获取角色名称列表
             'status': self.status,
-            'created_at': self.created_at,
+            'created_at': created_time,
         }

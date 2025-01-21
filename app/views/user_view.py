@@ -37,3 +37,8 @@ def disable_user(user_id):
 @user_bp.route('/<int:user_id>/enable', methods=['PUT'])
 def enable_user(user_id):
     return user_controller.enable_user(user_id)
+
+
+@user_bp.route('/<int:user_id>/roles', methods=['PUT'])
+def update_user_roles(user_id):
+    return user_controller.update_user_roles(user_id)

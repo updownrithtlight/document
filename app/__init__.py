@@ -5,6 +5,7 @@ from flask_jwt_extended import JWTManager, jwt_required
 from flask_cors import CORS
 import logging
 from config import Config
+import pytz
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -17,6 +18,13 @@ logger.addHandler(logging.StreamHandler())  # 将日志输出到标准输出
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://localhost:3000"}}, expose_headers=["Content-Disposition"])
+
+# 统一设置 Flask 解析时区
+china_tz = pytz.timezone(app.config["TIMEZONE"])
+
+def get_local_time(utc_time):
+    """ 将 UTC 时间转换为中国标准时间（CST）"""
+    return utc_time.replace(tzinfo=pytz.utc).astimezone(china_tz).strftime("%Y-%m-%d %H:%M:%S")
 
 
 from app.routes import setup_routes
