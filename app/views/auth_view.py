@@ -19,3 +19,8 @@ def login():
 def refresh():
     return auth_controller.refresh()
 
+
+@auth_bp.route('/logout', methods=['POST'])
+def logout():
+    return auth_controller.logout()
+

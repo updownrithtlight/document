@@ -91,14 +91,14 @@ def delete_menu(menu_id):
 def get_user_menu():
     try:
         user_identity = get_jwt_identity()
-        user = User.query.get(user_identity)
+        user = User.query.get(user_identity)  # 这里 user_identity 可能是 JSON，需要取 "user_id"
 
         if not user:
             return ResponseTemplate.error(message="User not found")
 
         if user.has_role("admin"):
             # 管理员获取所有菜单
-            menus = Menu.query.all()
+            menus = Menu.query.order_by(Menu.id.asc()).all()  # 假设有 `order` 字段
         else:
             # 普通用户基于角色获取菜单
             menus = set()
@@ -106,6 +106,13 @@ def get_user_menu():
                 for menu in role.menus:
                     menus.add(menu)
 
-        return ResponseTemplate.success(data=[menu.to_dict() for menu in menus], message="User menus retrieved successfully")
+            # 按 `order` 字段排序（如果没有 `order`，可以改成 `id`）
+            menus = sorted(menus, key=lambda x: x.id if hasattr(x, 'id') else x.id)
+
+        return ResponseTemplate.success(
+            data=[menu.to_dict() for menu in menus],
+            message="User menus retrieved successfully"
+        )
+
     except Exception as e:
         return ResponseTemplate.error(message=f"Error fetching user menus: {str(e)}")

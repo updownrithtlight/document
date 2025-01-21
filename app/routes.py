@@ -16,6 +16,7 @@ from app.views.important_notes_view import important_notes_bp
 from app.views.user_view import user_bp
 from app.views.role_view import role_bp
 from app.views.inspection_view import inspection_bp
+from app.views.office_document_view import office_file_bp
 
 
 
@@ -38,5 +39,6 @@ def setup_routes(app):
     app.register_blueprint(file_bp)
     app.register_blueprint(role_bp)
     app.register_blueprint(inspection_bp)
+    app.register_blueprint(office_file_bp)
     app.register_blueprint(user_bp)  # 注册用户 API
 

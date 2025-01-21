@@ -111,7 +111,7 @@ from app.models.models import MaterialInfo
 
 UPLOAD_FOLDER =app.config['OUTPUT_FOLDER']
 ALLOWED_EXTENSIONS = {"xls", "xlsx", "csv"}
-LIBREOFFICE_PATH = r"C:\noneSystem\bj\LibreOfficePortable\App\libreoffice\program\soffice.exe"  # LibreOffice 可执行路径
+LIBREOFFICE_PATH = app.config['LIBREOFFICE_PATH']  # LibreOffice 可执行路径
 
 
 def allowed_file(filename):

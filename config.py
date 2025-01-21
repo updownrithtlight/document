@@ -29,6 +29,7 @@ class Config:
     OUTPUT_FOLDER = os.path.join(UPLOAD_FOLDER, 'output')  # 存放生成文件的子目录
     FIELD_IMAGES_FOLDER = os.path.join(UPLOAD_FOLDER, 'field_images')  # 存放模板文件的子目录
     IMAGES_FOLDER = os.path.join(UPLOAD_FOLDER, 'images')  # 存放模板文件的子目录
+    LIBREOFFICE_PATH = r"C:\noneSystem\bj\LibreOfficePortable\App\libreoffice\program\soffice.exe"  # LibreOffice 可执行路径
 
 
 

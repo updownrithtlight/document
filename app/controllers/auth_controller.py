@@ -90,7 +90,6 @@ def refresh():
     # 提取 user_id 和 roles
     user_id_str = decoded_token.get('user_id')
     roles = decoded_token.get('roles', ["user"])
-    print(roles)
     if not user_id_str:
         raise CustomAPIException("Invalid refresh token payload", 401)
 
@@ -111,3 +110,13 @@ def get_user_info():
         message="User info retrieved successfully",
         data={"user_id": user_identity["user_id"], "roles": user_identity["roles"]}
     )
+
+
+# ✅ **用户退出登录**
+def logout():
+    response = make_response(ResponseTemplate.success(message="Logout successful"))
+
+    # **📌 清除 `refresh_token`**
+    response.set_cookie('refresh_token', '', max_age=0, httponly=True, secure=True, path='/')
+
+    return response
