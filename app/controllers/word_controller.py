@@ -1,4 +1,6 @@
 import os
+from datetime import datetime
+
 from flask import jsonify, send_file, request
 from flask_jwt_extended import jwt_required
 from urllib.parse import quote
@@ -29,9 +31,14 @@ def generate_tech_manual(project_id):
 
         project_field_list = get_list_by_project_id(project_id)
         # **提取参数**
+        today = datetime.today()
 
+        # 生成格式化的日期字符串
+        formatted_date = today.strftime("%y%m%d")
+
+        print(formatted_date)
         # **生成文件路径**
-        output_file_name = f"{project.project_model}_技术说明书.docx"
+        output_file_name = f"{project.project_model}技术说明书 {formatted_date}.docx"
         output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_file_name)
 
         # **填充 Word 模板**
@@ -142,10 +149,17 @@ def generate_product_spec(project_id):
             return jsonify({"error": "项目不存在"}), 404
 
         project_field_list = get_list_by_project_id(project_id)
+        today = datetime.today()
+
+        # 生成格式化的日期字符串
+        formatted_date = today.strftime("%y%m%d")
+
+        print(formatted_date)
         # **提取参数**
 
+
         # **生成文件路径**
-        output_file_name = f"{project.project_model}_产品规范.docx"
+        output_file_name = f"{project.project_model}产品规范 {formatted_date}.docx"
         output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_file_name)
 
         # **填充 Word 模板**

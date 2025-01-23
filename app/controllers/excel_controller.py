@@ -10,6 +10,9 @@ import openpyxl
 from openpyxl.styles import Border, Side, Alignment
 # 模板路径
 TEMPLATE_PATH = os.path.join(app.config['TEMPLATE_FOLDER'], "materialtabletemplate.xlsx")
+from datetime import datetime
+
+
 
 
 
@@ -35,11 +38,15 @@ def generate_excel(project_id):
             "产品等级": "N/A",
             "产品编号": project.product_number,
         }
+        today = datetime.today()
 
+        # 生成格式化的日期字符串
+        formatted_date = today.strftime("%y%m%d")
+
+        print(formatted_date)
         # 动态生成输出文件名称
         product_model = project.project_model or "未命名产品"
-        product_number = project.product_number or "未命名编号"
-        output_file_name = f"{product_model}_BOM物料表{product_number}.xlsx"
+        output_file_name = f"{product_model}BOM明细表 {formatted_date}.xlsx"
         output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_file_name)
 
         # 调用填充函数
@@ -138,14 +145,19 @@ def generate_excel_local(project_id):
             "产品型号": project.project_model,
             "成品规格": project.project_type,
             "文件编号": project.file_number,
-            "产品等级": "N/A",
+            "产品等级": project.project_level,
             "产品编号": project.product_number,
         }
+        # 获取当前日期
+        today = datetime.today()
 
+        # 生成格式化的日期字符串
+        formatted_date = today.strftime("%y%m%d")
+
+        print(formatted_date)
         # 动态生成输出文件名称
         product_model = project.project_model or "未命名产品"
-        product_number = project.product_number or "未命名编号"
-        output_file_name = f"{product_model}_BOM物料表{product_number}.xlsx"
+        output_file_name = f"{product_model}BOM明细表 {formatted_date}.xlsx"
         output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_file_name)
 
         # 调用填充函数
