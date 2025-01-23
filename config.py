@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Config:
+    LIBREOFFICE_PATH = os.path.join(os.path.dirname(__file__), "LibreOfficePortable", "App", "libreoffice", "program", "soffice.exe")
     TIMEZONE = 'Asia/Shanghai'
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'your_secret_key_here'
     # SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///database.db'
@@ -28,8 +29,8 @@ class Config:
     TEMPLATE_FOLDER = os.path.join(UPLOAD_FOLDER, 'template')  # 存放模板文件的子目录
     OUTPUT_FOLDER = os.path.join(UPLOAD_FOLDER, 'output')  # 存放生成文件的子目录
     FIELD_IMAGES_FOLDER = os.path.join(UPLOAD_FOLDER, 'field_images')  # 存放模板文件的子目录
-    IMAGES_FOLDER = os.path.join(UPLOAD_FOLDER, 'images')  # 存放模板文件的子目录
-    LIBREOFFICE_PATH = r"C:\noneSystem\bj\LibreOfficePortable\App\libreoffice\program\soffice.exe"  # LibreOffice 可执行路径
-
+    IMAGES_FOLDER = os.path.join(UPLOAD_FOLDER, 'images')  # 存放外形结构尺寸
+    EMF_FOLDER = os.path.join(UPLOAD_FOLDER, 'emf')  # 存放电路图
+    CUSTOM_EMF_FOLDER = os.path.join(UPLOAD_FOLDER, 'custom_emf')  # 存放用户上传电路图
 
 

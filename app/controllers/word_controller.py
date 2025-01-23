@@ -1,6 +1,4 @@
-import os
 from datetime import datetime
-
 from flask import jsonify, send_file, request
 from flask_jwt_extended import jwt_required
 from urllib.parse import quote
@@ -15,7 +13,7 @@ from lxml import etree
 from docx import Document
 
 # **模板文件路径**
-TEMPLATE_PATH = os.path.join(app.config['TEMPLATE_FOLDER'], "technical_document_template.docx")
+TECHNICAL_TEMPLATE_PATH = os.path.join(app.config['TEMPLATE_FOLDER'], "technical_document_template.docx")
 PRODUCT_SPECIFICATION_TEMPLATE_PATH = os.path.join(app.config['TEMPLATE_FOLDER'], "product_specification.docx")
 
 
@@ -42,7 +40,7 @@ def generate_tech_manual(project_id):
         output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_file_name)
 
         # **填充 Word 模板**
-        fill_product_spec_template(TEMPLATE_PATH, output_path, project, project_field_list)
+        fill_placeholder_template(TECHNICAL_TEMPLATE_PATH, output_path, project, project_field_list)
 
         # **URL 编码文件名，避免中文乱码**
         encoded_file_name = quote(output_file_name)
@@ -62,7 +60,7 @@ def generate_tech_manual(project_id):
 
 
 
-def fill_product_spec_template(template_path, output_path, project, field_list):
+def fill_placeholder_template(template_path, output_path, project, field_list):
     """
     生成 Word 文档，替换正文、表格、页眉、页脚占位符
     """
@@ -163,7 +161,7 @@ def generate_product_spec(project_id):
         output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_file_name)
 
         # **填充 Word 模板**
-        fill_product_spec_template(PRODUCT_SPECIFICATION_TEMPLATE_PATH, output_path, project, project_field_list)
+        fill_placeholder_template(PRODUCT_SPECIFICATION_TEMPLATE_PATH, output_path, project, project_field_list)
 
         # **URL 编码文件名，避免中文乱码**
         encoded_file_name = quote(output_file_name)
