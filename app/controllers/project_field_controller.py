@@ -18,7 +18,7 @@ def get_project_field(project_field_id):
     """ 根据 ID 获取单个项目字段 """
     project_field = ProjectFieldValue.query.get(project_field_id)
     if not project_field:
-        return ResponseTemplate.error(message='ProjectFieldValue not found')
+        return ResponseTemplate.success(message='ProjectFieldValue not found')
     return ResponseTemplate.success(data=project_field.to_dict(), message='success')
 
 
@@ -120,7 +120,7 @@ def get_project_fields_by_project_id_parent_id(project_id, parent_id):
 def get_project_field_by_project_id_field_id(project_id, field_id):
     existing_project_field = ProjectFieldValue.query.filter_by(project_id=project_id, field_id=field_id).first()
     if not existing_project_field:
-        return ResponseTemplate.error(message='ProjectFieldValue not found')
+        return ResponseTemplate.success(message='ProjectFieldValue not found')
     return ResponseTemplate.success(data=existing_project_field.to_dict(), message='success')
 
 
