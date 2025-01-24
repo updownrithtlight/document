@@ -62,33 +62,43 @@ def generate_tech_manual(project_id):
 
 def fill_placeholder_template(template_path, output_path, project, field_list):
     """
-    生成 Word 文档，替换正文、表格、页眉、页脚占位符
-    """
-    temp_dir = output_path.replace(".docx", "_temp")  # 创建临时目录
-    unzip_docx(template_path, temp_dir)  # 解压原始 .docx
-    print("🔍 field_list 类型:", type(field_list))
+    生成 Word 文档，替换正文、表格、页眉、页脚占位符，并处理图片替换。
 
-    if field_list:
-        print("🔍 field_list 第一个元素类型:", type(field_list[0]))
-        print("🔍 field_list 第一个元素:", field_list[0])
-    else:
-        print("⚠️ field_list 为空列表")
+    :param template_path: 原始 Word 模板路径
+    :param output_path: 生成 Word 文档的目标路径
+    :param project: 包含项目信息的对象
+    :param field_list: 字段列表，包含 code 和 value
+    """
+
+    # **创建临时目录**
+    temp_dir = output_path.replace(".docx", "_temp")
+    unzip_docx(template_path, temp_dir)  # 解压原始 .docx
+    print("🔍 解压完成，开始处理字段替换...")
+
+    # **转换 field_list 为字典**
+    data_map = {item['code']: item for item in field_list if item['code'] is not None}
+    print(f"📌 解析字段完成，共 {len(data_map)} 个字段.")
+
     # **构建字段映射**
     field_dict = {
-        f"{{{{POWER_{(field.get('code') or 'UNKNOWN').upper()}}}}}": field.get('value') or field.get('custom_value') or 'test'
+        f"{{{{POWER_{(field.get('code') or 'UNKNOWN').upper()}}}}}": field.get('value') or field.get(
+            'custom_value') or 'test'
         for field in field_list
     }
 
+    # **项目信息映射**
     project_placeholders = {
-        "{{project_model}}": project.project_model,
-        "{{project_name}}": project.project_name,
+        "{{project_model}}": project.project_model or "N/A",
+        "{{project_name}}": project.project_name or "N/A",
         "{{project_type}}": project.project_type or 'N/A',
         "{{working_temperature}}": project.working_temperature or 'N/A',
         "{{storage_temperature}}": project.storage_temperature or 'N/A',
-        "{{file_number}}": project.file_number,
-        "{{product_number}}": project.product_number,
-        "{{project_level}}": project.project_level,
+        "{{file_number}}": project.file_number or "N/A",
+        "{{product_number}}": project.product_number or "N/A",
+        "{{project_level}}": project.project_level or "N/A",
     }
+
+    # **合并所有占位符**
     all_placeholders = {**project_placeholders, **field_dict}
 
     # **替换正文和表格**
@@ -98,6 +108,47 @@ def fill_placeholder_template(template_path, output_path, project, field_list):
     for file in os.listdir(os.path.join(temp_dir, "word")):
         if file.startswith("header") or file.startswith("footer"):
             replace_docx_text(os.path.join(temp_dir, f"word/{file}"), all_placeholders)
+
+    print("✅ 文本占位符替换完成.")
+
+    # **图片处理**
+    def safe_get(data, key, sub_key):
+        """安全获取嵌套字典值，避免 KeyError"""
+        return data.get(key, {}).get(sub_key)
+
+    # 获取图片路径
+    dimensions_url = safe_get(data_map, "dimensions", "custom_value")
+    circuit_diagram_filename = safe_get(data_map, "circuit_diagram", "custom_value")
+
+    # 计算目标图片路径
+    IMAGE_RM = os.path.join(app.config['IMAGES_FOLDER'], os.path.basename(dimensions_url)) if dimensions_url else None
+    EMF_RM = os.path.join(app.config['EMF_FOLDER'], circuit_diagram_filename) if circuit_diagram_filename else None
+
+    # **处理图片替换或删除**
+    replacements_dict = {}
+
+    if dimensions_url:
+        replacements_dict["image1.png"] = IMAGE_RM
+    else:
+        # 如果 `dimensions` 为空，则删除 `image1.png`
+        image1_path = os.path.join(temp_dir, "word", "media", "image1.png")
+        if os.path.exists(image1_path):
+            os.remove(image1_path)
+            print("🗑️ 已删除无效的 image1.png")
+
+    if circuit_diagram_filename:
+        replacements_dict["image2.emf"] = EMF_RM
+    else:
+        # 如果 `circuit_diagram` 为空，则删除 `image2.emf`
+        image2_path = os.path.join(temp_dir, "word", "media", "image2.emf")
+        if os.path.exists(image2_path):
+            os.remove(image2_path)
+            print("🗑️ 已删除无效的 image2.emf")
+
+    # **执行图片替换**
+    if replacements_dict:
+        replace_images_in_docx(os.path.join(temp_dir, "word", "media"), replacements_dict)
+        print(f"✅ 已替换 {len(replacements_dict)} 张图片.")
 
     # **重新压缩 .docx**
     zip_docx(temp_dir, output_path)
@@ -132,6 +183,32 @@ def replace_docx_text(xml_path, replacements):
 
     with open(xml_path, "w", encoding="utf-8") as f:
         f.write(xml_content)
+
+
+
+def replace_images_in_docx(docx_path, replacements):
+    """
+    用新的图片替换 docx 文件中的图片
+    :param docx_path:      原始 docx 文件路径
+    :param replacements:   dict，键为需要被替换的图片文件名（例如 'image1.png'），值为新的图片路径
+    :param output_path:    替换后的 docx 文件输出路径，为 None 时自动在同目录生成一个新文件
+    :return:               替换后 docx 文件的路径
+    """
+
+    # 3. 替换图片（仅限同名/同扩展名）
+    if not os.path.exists(docx_path):
+        # 如果没有 word/media 文件夹，说明里面没有图片
+        print("文档中未找到图片文件夹 word/media")
+    else:
+        for old_image_name, new_image_path in replacements.items():
+            old_image_full_path = os.path.join(docx_path, old_image_name)
+            if os.path.exists(old_image_full_path):
+                # 删除旧图，然后复制新图过去
+                os.remove(old_image_full_path)
+                shutil.copy(new_image_path, old_image_full_path)
+                print(f"已替换: {old_image_name} -> {new_image_path}")
+            else:
+                print(f"未找到对应图片: {old_image_name}，跳过替换。")
 
 
 
