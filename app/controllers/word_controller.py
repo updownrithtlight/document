@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 from flask import jsonify, send_file, request
 from flask_jwt_extended import jwt_required
@@ -78,12 +79,19 @@ def fill_placeholder_template(template_path, output_path, project, field_list):
     # **转换 field_list 为字典**
     data_map = {item['code']: item for item in field_list if item['code'] is not None}
     print(f"📌 解析字段完成，共 {len(data_map)} 个字段.")
+    data_list = json.loads(data_map.get("manufacturing_process")["custom_value"])
 
+    formatted_str = "、".join(data_list)
+    print(formatted_str)
     # **构建字段映射**
     field_dict = {
-        f"{{{{POWER_{(field.get('code') or 'UNKNOWN').upper()}}}}}": field.get('value') or field.get(
-            'custom_value') or 'test'
-        for field in field_list
+        "{{operating_temp}}": data_map.get("operating_temp")["custom_value"],
+        "{{storage_temp}}": data_map.get("storage_temp")["custom_value"],
+        "{{housing_material}}": data_map.get("housing_material")["custom_value"],
+        "{{manufacturing_process}}": formatted_str ,
+        "{{weight}}": data_map.get("weight")["custom_value"],
+        "{{input_terminal}}": data_map.get("input_terminal")["custom_value"],
+        "{{output_terminal}}": data_map.get("output_terminal")["custom_value"],
     }
 
     # **项目信息映射**
@@ -91,8 +99,6 @@ def fill_placeholder_template(template_path, output_path, project, field_list):
         "{{project_model}}": project.project_model or "N/A",
         "{{project_name}}": project.project_name or "N/A",
         "{{project_type}}": project.project_type or 'N/A',
-        "{{working_temperature}}": project.working_temperature or 'N/A',
-        "{{storage_temperature}}": project.storage_temperature or 'N/A',
         "{{file_number}}": project.file_number or "N/A",
         "{{product_number}}": project.product_number or "N/A",
         "{{project_level}}": project.project_level or "N/A",
