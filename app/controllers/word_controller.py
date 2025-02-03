@@ -79,19 +79,19 @@ def fill_placeholder_template(template_path, output_path, project, field_list):
     # **转换 field_list 为字典**
     data_map = {item['code']: item for item in field_list if item['code'] is not None}
     print(f"📌 解析字段完成，共 {len(data_map)} 个字段.")
-    data_list = json.loads(data_map.get("manufacturing_process")["custom_value"])
+    data_list = json.loads(data_map.get("manufacturing_process")["custom_value"] or "N/A")
 
     formatted_str = "、".join(data_list)
     print(formatted_str)
     # **构建字段映射**
     field_dict = {
-        "{{operating_temp}}": data_map.get("operating_temp")["custom_value"],
-        "{{storage_temp}}": data_map.get("storage_temp")["custom_value"],
-        "{{housing_material}}": data_map.get("housing_material")["custom_value"],
-        "{{manufacturing_process}}": formatted_str ,
-        "{{weight}}": data_map.get("weight")["custom_value"],
-        "{{input_terminal}}": data_map.get("input_terminal")["custom_value"],
-        "{{output_terminal}}": data_map.get("output_terminal")["custom_value"],
+        "{{operating_temp}}": data_map.get("operating_temp")["custom_value"] or "N/A",
+        "{{storage_temp}}": data_map.get("storage_temp")["custom_value"] or "N/A",
+        "{{housing_material}}": data_map.get("housing_material")["custom_value"] or "N/A",
+        "{{manufacturing_process}}": formatted_str or "N/A",
+        "{{weight}}": data_map.get("weight")["custom_value"] or "N/A",
+        "{{input_terminal}}": data_map.get("input_terminal")["custom_value"] or "N/A",
+        "{{output_terminal}}": data_map.get("output_terminal")["custom_value"] or "N/A",
     }
 
     # **项目信息映射**
