@@ -35,7 +35,7 @@ def generate_excel(project_id):
             "产品型号": project.project_model,
             "成品规格": project.project_type,
             "文件编号": project.file_number,
-            "产品等级": "N/A",
+            "产品等级": project.project_level,
             "产品编号": project.product_number,
         }
         today = datetime.today()
