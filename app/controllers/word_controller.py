@@ -77,22 +77,32 @@ def fill_placeholder_template(template_path, output_path, project, field_list):
     print("🔍 解压完成，开始处理字段替换...")
 
     # **转换 field_list 为字典**
-    data_map = {item['code']: item for item in field_list if item['code'] is not None}
+    data_map = {item['code']: item for item in field_list if item.get('code') is not None}
     print(f"📌 解析字段完成，共 {len(data_map)} 个字段.")
-    data_list = json.loads(data_map.get("manufacturing_process")["custom_value"] or "N/A")
 
-    formatted_str = "、".join(data_list)
+    # **安全获取 manufacturing_process 并解析**
+    manufacturing_process_data = data_map.get("manufacturing_process", {}).get("custom_value", "N/A")
+    try:
+        data_list = json.loads(manufacturing_process_data) if manufacturing_process_data not in ["N/A", None,
+                                                                                                 ""] else []
+    except json.JSONDecodeError:
+        data_list = []
+
+    formatted_str = "、".join(data_list) if data_list else "N/A"
     print(formatted_str)
+
     # **构建字段映射**
     field_dict = {
-        "{{operating_temp}}": data_map.get("operating_temp")["custom_value"] or "N/A",
-        "{{storage_temp}}": data_map.get("storage_temp")["custom_value"] or "N/A",
-        "{{housing_material}}": data_map.get("housing_material")["custom_value"] or "N/A",
-        "{{manufacturing_process}}": formatted_str or "N/A",
-        "{{weight}}": data_map.get("weight")["custom_value"] or "N/A",
-        "{{input_terminal}}": data_map.get("input_terminal")["custom_value"] or "N/A",
-        "{{output_terminal}}": data_map.get("output_terminal")["custom_value"] or "N/A",
+        "{{operating_temp}}": data_map.get("operating_temp", {}).get("custom_value", "N/A"),
+        "{{storage_temp}}": data_map.get("storage_temp", {}).get("custom_value", "N/A"),
+        "{{housing_material}}": data_map.get("housing_material", {}).get("custom_value", "N/A"),
+        "{{manufacturing_process}}": formatted_str,
+        "{{weight}}": data_map.get("weight", {}).get("custom_value", "N/A"),
+        "{{input_terminal}}": data_map.get("input_terminal", {}).get("custom_value", "N/A"),
+        "{{output_terminal}}": data_map.get("output_terminal", {}).get("custom_value", "N/A"),
     }
+
+    print(field_dict)
 
     # **项目信息映射**
     project_placeholders = {

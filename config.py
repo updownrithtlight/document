@@ -6,6 +6,7 @@ load_dotenv()
 
 class Config:
     LIBREOFFICE_PATH = os.path.join(os.path.dirname(__file__), "LibreOfficePortable", "App", "libreoffice", "program", "soffice.exe")
+    LIBREOFFICE_LIB_PATH = r"C:\Program Files\LibreOffice\program"
     TIMEZONE = 'Asia/Shanghai'
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'your_secret_key_here'
     # SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///database.db'
