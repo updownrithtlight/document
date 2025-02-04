@@ -278,7 +278,8 @@ def generate_product_spec(project_id):
 
         # **填充 Word 模板**
         fill_placeholder_template(PRODUCT_SPECIFICATION_TEMPLATE_PATH, output_path, project, project_field_list)
-
+        # **更新目录**
+        WordTocTool.update_toc_via_word(output_path)
         # **URL 编码文件名，避免中文乱码**
         encoded_file_name = quote(output_file_name)
 
