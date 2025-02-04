@@ -83,6 +83,44 @@ class WordTocTool:
             pythoncom.CoUninitialize()
 
     @staticmethod
+    def delete_section_by_title2_or_higher(doc, target_title):
+        """
+        删除 Word 文档中，从指定标题2（Heading 2）开始，直到遇到下一个相同级别 (Heading 2) 或更高级别 (Heading 1) 的所有段落。
+
+        :param doc: Word 文档对象 (Document)
+        :param target_title: 需要删除的标题2（Heading 2）的文本
+        """
+
+        def delete_paragraph(paragraph):
+            """
+            删除段落的底层 XML 结构
+            """
+            element = paragraph._element
+            element.getparent().remove(element)
+            paragraph._p = paragraph._element = None
+
+        delete_flag = False  # 是否进入删除模式
+
+        for para in doc.paragraphs[:]:  # 遍历所有段落
+            para_text = para.text.strip()  # 获取文本内容
+            para_style = para.style.name  # 获取样式名称
+
+            # 遇到 `Heading 1` 或 `Heading 2`，可能要停止删除
+            if para_style in ["Heading 1", "Heading 2"]:
+                if delete_flag:
+                    # 如果已经进入删除模式，遇到 Heading 1 或 Heading 2 就终止删除
+                    break
+
+                # 如果当前段落是目标标题 (Heading 2)，则开始删除模式
+                if para_text == target_title and para_style == "Heading 2":
+                    delete_flag = True  # 开启删除模式
+                    delete_paragraph(para)  # 删除目标标题本身
+
+            elif delete_flag:
+                # 处于删除模式，则删除该段落
+                delete_paragraph(para)
+
+    @staticmethod
     def process_document(template_path, new_doc_suffix="_modified", delete_titles=None):
         """
         加载模板文档后，删除指定标题（列表 delete_titles 中的每个标题）及其后续内容，

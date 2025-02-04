@@ -110,3 +110,17 @@ def get_fields_by_code():
     # 使用字典推导，创建以 code 为键，FieldDefinition 对象的字典表示为值的字典
     fields_by_code = {item.code: item.to_dict() for item in results}
     return fields_by_code
+
+
+def get_fields_h2_by_code():
+    codes = [
+        'salt_spray',
+        'mold_resistance',
+        'shock_resistance',
+        'vibration_resistance'
+    ]
+    # 执行查询，获取符合条件的所有记录
+    results = FieldDefinition.query.filter(FieldDefinition.code.in_(codes)).all()
+    # 使用字典推导，创建以 code 为键，FieldDefinition 对象的字典表示为值的字典
+    fields_by_code = {item.code: item.to_dict() for item in results}
+    return fields_by_code

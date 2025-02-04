@@ -5,7 +5,7 @@ from flask_jwt_extended import jwt_required
 from urllib.parse import quote
 from app import app
 from app.controllers.project_field_controller import get_list_by_project_id
-from app.controllers.field_definition_controller import get_fields_by_code
+from app.controllers.field_definition_controller import get_fields_by_code, get_fields_h2_by_code
 from app.exceptions.exceptions import CustomAPIException
 from app.models.models import Project
 import os
@@ -57,9 +57,18 @@ def generate_tech_manual(project_id):
         target_titles = filter_missing_field_names(data_source_map, data_map)
         print(f"📌 需要删除的标题: {target_titles}")
 
-        # **删除未出现的标题**
+        # **删除未出现的1级标题**
         for title in target_titles:
             WordTocTool.delete_section_by_title(doc, title)
+
+        data_source_h2_map = get_fields_h2_by_code()
+        environmental_characteristics = data_map.get("environmental_characteristics", {}).get("custom_value", "N/A")
+
+        target_h2_titles = filter_missing_field_h2_names(data_source_h2_map, environmental_characteristics)
+        if target_h2_titles != "":
+            # **删除未出现的2级标题**
+            for title in target_h2_titles:
+                WordTocTool.delete_section_by_title2_or_higher(doc, title)
 
         # **保存删除后的文档**
         doc.save(output_path)  # ✅ 这里确保删除的内容被保存
@@ -94,6 +103,25 @@ def filter_missing_field_names(baseline_data, input_data):
     missing_field_names = []
     for code, data in baseline_data.items():
         if code not in input_data:
+            # Assumes 'field_name' key exists in the data dictionary
+            missing_field_names.append(data['field_name'])
+    return missing_field_names
+
+
+
+def filter_missing_field_h2_names(baseline_data, input_code_array):
+    """
+    过滤出在基准数据中存在，但在输入数据中没有出现的字段名称。
+
+    :param baseline_data: 字典，包含基准数据，格式为 {code: field_data}
+    :param input_code_array: 字典，包含要检查的数据，格式应与 [code1,code2] 相同
+    :return: 列表，包含那些在输入数据中未出现的基准数据项的 field_name
+    """
+    if input_code_array == "N/A":
+        return ""
+    missing_field_names = []
+    for code, data in baseline_data.items():
+        if code not in input_code_array:
             # Assumes 'field_name' key exists in the data dictionary
             missing_field_names.append(data['field_name'])
     return missing_field_names
