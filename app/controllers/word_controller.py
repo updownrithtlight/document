@@ -179,21 +179,10 @@ def fill_placeholder_template(template_path, output_path, project, data_map):
 
     if dimensions_url:
         replacements_dict["image1.png"] = IMAGE_RM
-    else:
-        # 如果 `dimensions` 为空，则删除 `image1.png`
-        image1_path = os.path.join(temp_dir, "word", "media", "image1.png")
-        if os.path.exists(image1_path):
-            os.remove(image1_path)
-            print("🗑️ 已删除无效的 image1.png")
 
     if circuit_diagram_filename:
         replacements_dict["image2.emf"] = EMF_RM
-    else:
-        # 如果 `circuit_diagram` 为空，则删除 `image2.emf`
-        image2_path = os.path.join(temp_dir, "word", "media", "image2.emf")
-        if os.path.exists(image2_path):
-            os.remove(image2_path)
-            print("🗑️ 已删除无效的 image2.emf")
+
 
     # **执行图片替换**
     if replacements_dict:
