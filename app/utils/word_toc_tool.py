@@ -1,4 +1,6 @@
 import os
+
+import pythoncom
 import win32com.client as win32
 from docx import Document
 
@@ -32,44 +34,53 @@ class WordTocTool:
         """
         利用 Microsoft Word COM 自动化接口更新文档目录（TOC）。
         打开指定文档，调用目录的 Update 方法后保存并关闭文档。
+
+        在调用 COM 相关接口前，先调用 pythoncom.CoInitialize() 初始化 COM，
+        最后使用 pythoncom.CoUninitialize() 释放资源。
         """
-        abs_path = os.path.abspath(doc_path)
-        print("启动 Word 应用程序...")
-        word = win32.Dispatch("Word.Application")
-        word.Visible = False  # 后台运行
-
+        # 初始化 COM（确保当前线程已初始化 COM）
+        pythoncom.CoInitialize()
         try:
-            print("打开文档：", abs_path)
-            doc = word.Documents.Open(abs_path)
-        except Exception as e:
-            print("❌ 打开文档失败：", e)
-            word.Quit()
-            return False
+            abs_path = os.path.abspath(doc_path)
+            print("启动 Word 应用程序...")
+            word = win32.Dispatch("Word.Application")
+            word.Visible = False  # 后台运行
 
-        try:
-            if doc.TablesOfContents.Count > 0:
-                toc = doc.TablesOfContents(1)
-                print("更新目录 TOC ...")
-                toc.Update()
-            else:
-                print("文档中没有目录 TOC")
-            print("保存文档...")
-            doc.Save()
-        except Exception as e:
-            print("❌ 更新目录失败：", e)
-            doc.Close(False)
-            word.Quit()
-            return False
+            try:
+                print("打开文档：", abs_path)
+                doc = word.Documents.Open(abs_path)
+            except Exception as e:
+                print("❌ 打开文档失败：", e)
+                word.Quit()
+                return False
 
-        try:
-            doc.Close(False)
-            print("关闭文档成功。")
-        except Exception as e:
-            print("关闭文档时出现异常：", e)
+            try:
+                if doc.TablesOfContents.Count > 0:
+                    toc = doc.TablesOfContents(1)
+                    print("更新目录 TOC ...")
+                    toc.Update()
+                else:
+                    print("文档中没有目录 TOC")
+                print("保存文档...")
+                doc.Save()
+            except Exception as e:
+                print("❌ 更新目录失败：", e)
+                doc.Close(False)
+                word.Quit()
+                return False
+
+            try:
+                doc.Close(False)
+                print("关闭文档成功。")
+            except Exception as e:
+                print("关闭文档时出现异常：", e)
+            finally:
+                word.Quit()
+                print("Word 应用程序已退出。")
+            return True
         finally:
-            word.Quit()
-            print("Word 应用程序已退出。")
-        return True
+            # 清理 COM 初始化
+            pythoncom.CoUninitialize()
 
     @staticmethod
     def process_document(template_path, new_doc_suffix="_modified", delete_titles=None):
@@ -112,7 +123,7 @@ class WordTocTool:
 if __name__ == "__main__":
     # 示例：请根据实际情况修改模板文件路径和需要删除的标题列表
     template_path = r"C:\noneSystem\bj\document\test\technical_document_template.docx"
-    delete_titles = ["插入损耗特性", "产品功能"]
+    delete_titles = ['环境特性']
 
     # 先处理文档：删除指定章节，并保存为新文件
     new_doc_path = WordTocTool.process_document(template_path, new_doc_suffix="_modified", delete_titles=delete_titles)

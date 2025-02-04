@@ -12,69 +12,10 @@ office_file_bp = Blueprint('office_file', __name__, url_prefix='/api/office_file
 # 确保 UNO 模块可以找到
 LIBREOFFICE_PROGRAM_PATH = app.config['LIBREOFFICE_LIB_PATH']
 
-if LIBREOFFICE_PROGRAM_PATH not in sys.path:
-    sys.path.append(LIBREOFFICE_PROGRAM_PATH)
-    app.logger.info(f"✅ 已将 LibreOffice `program` 目录添加到 sys.path: {LIBREOFFICE_PROGRAM_PATH}")
-
-try:
-    import uno
-    from com.sun.star.beans import PropertyValue
-    app.logger.info("✅ UNO 模块导入成功！")
-except ImportError as e:
-    app.logger.error("❌ UNO 模块导入失败，请检查 LibreOffice 是否正确安装: %s", e)
-    sys.exit(1)
 
 # LibreOffice 配置
 LIBREOFFICE_PATH = app.config['LIBREOFFICE_PATH']
 OUTPUT_FOLDER = app.config['OUTPUT_FOLDER']
-
-
-# 📌 **更新 Word 文档中的目录 (TOC)**
-def update_toc_with_uno(doc_path):
-    """
-    使用 UNO 接口更新 Word 文档的目录（TOC）。
-    """
-    abs_path = os.path.abspath(doc_path)
-    file_url = uno.systemPathToFileUrl(abs_path)
-
-    local_context = uno.getComponentContext()
-    resolver = local_context.ServiceManager.createInstanceWithContext("com.sun.star.bridge.UnoUrlResolver", local_context)
-
-    try:
-        ctx = resolver.resolve("uno:socket,host=localhost,port=2002;urp;StarOffice.ComponentContext")
-    except Exception as e:
-        app.logger.error("❌ 连接到 LibreOffice UNO 失败，请确认 LibreOffice 服务已启动: %s", e)
-        return {"error": "LibreOffice UNO 连接失败", "details": str(e)}
-
-    smgr = ctx.ServiceManager
-    desktop = smgr.createInstanceWithContext("com.sun.star.frame.Desktop", ctx)
-
-    # 加载 Word 文档
-    doc = desktop.loadComponentFromURL(file_url, "_blank", 0, ())
-    if not doc:
-        app.logger.error("❌ 加载 Word 文档失败: %s", doc_path)
-        return {"error": "加载 Word 文档失败"}
-
-    try:
-        # 更新所有目录字段
-        doc.updateAll()
-    except Exception as e:
-        app.logger.error("❌ 更新 Word 目录 (TOC) 失败: %s", e)
-        return {"error": "更新 TOC 失败", "details": str(e)}
-
-    # 保存文档
-    store_props = (PropertyValue("FilterName", 0, "MS Word 2007 XML", 0),)
-    try:
-        doc.storeToURL(file_url, store_props)
-    except Exception as e:
-        app.logger.error("❌ 保存 Word 文档失败: %s", e)
-        return {"error": "保存 Word 失败", "details": str(e)}
-    finally:
-        doc.close(True)
-
-    app.logger.info("✅ Word 目录 (TOC) 已更新: %s", doc_path)
-    return {"success": True}
-
 
 # 🔄 **使用 UNO 进行 PDF 转换**
 def convert_to_pdf(file_path):

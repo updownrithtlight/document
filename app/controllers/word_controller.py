@@ -5,6 +5,7 @@ from flask_jwt_extended import jwt_required
 from urllib.parse import quote
 from app import app
 from app.controllers.project_field_controller import get_list_by_project_id
+from app.controllers.field_definition_controller import get_fields_by_code
 from app.exceptions.exceptions import CustomAPIException
 from app.models.models import Project
 import os
@@ -12,11 +13,11 @@ import zipfile
 import shutil
 from lxml import etree
 from docx import Document
+from app.utils.word_toc_tool import WordTocTool
 
 # **模板文件路径**
 TECHNICAL_TEMPLATE_PATH = os.path.join(app.config['TEMPLATE_FOLDER'], "technical_document_template.docx")
 PRODUCT_SPECIFICATION_TEMPLATE_PATH = os.path.join(app.config['TEMPLATE_FOLDER'], "product_specification.docx")
-
 
 @jwt_required()
 def generate_tech_manual(project_id):
@@ -39,9 +40,32 @@ def generate_tech_manual(project_id):
         # **生成文件路径**
         output_file_name = f"{project.project_model}技术说明书 {formatted_date}.docx"
         output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_file_name)
-
+        # **转换 field_list 为字典**
+        data_map = {item['code']: item for item in project_field_list if item.get('code') is not None}
+        print(f"📌 解析字段完成，共 {len(data_map)} 个字段.")
         # **填充 Word 模板**
-        fill_placeholder_template(TECHNICAL_TEMPLATE_PATH, output_path, project, project_field_list)
+        fill_placeholder_template(TECHNICAL_TEMPLATE_PATH, output_path, project, data_map)
+
+        try:
+            doc = Document(output_path)
+        except Exception as e:
+            print("❌ 加载文档失败：", e)
+            return None
+
+        data_source_map = get_fields_by_code()
+
+        target_titles = filter_missing_field_names(data_source_map, data_map)
+        print(f"📌 需要删除的标题: {target_titles}")
+
+        # **删除未出现的标题**
+        for title in target_titles:
+            WordTocTool.delete_section_by_title(doc, title)
+
+        # **保存删除后的文档**
+        doc.save(output_path)  # ✅ 这里确保删除的内容被保存
+
+        # **更新目录**
+        WordTocTool.update_toc_via_word(output_path)
 
         # **URL 编码文件名，避免中文乱码**
         encoded_file_name = quote(output_file_name)
@@ -56,12 +80,26 @@ def generate_tech_manual(project_id):
         return response
 
     except Exception as e:
-        raise CustomAPIException("Material not found in the project", 404)
+        raise CustomAPIException(e, 404)
 
 
+def filter_missing_field_names(baseline_data, input_data):
+    """
+    过滤出在基准数据中存在，但在输入数据中没有出现的字段名称。
+
+    :param baseline_data: 字典，包含基准数据，格式为 {code: field_data}
+    :param input_data: 字典，包含要检查的数据，格式应与 baseline_data 相同
+    :return: 列表，包含那些在输入数据中未出现的基准数据项的 field_name
+    """
+    missing_field_names = []
+    for code, data in baseline_data.items():
+        if code not in input_data:
+            # Assumes 'field_name' key exists in the data dictionary
+            missing_field_names.append(data['field_name'])
+    return missing_field_names
 
 
-def fill_placeholder_template(template_path, output_path, project, field_list):
+def fill_placeholder_template(template_path, output_path, project, data_map):
     """
     生成 Word 文档，替换正文、表格、页眉、页脚占位符，并处理图片替换。
 
@@ -75,10 +113,6 @@ def fill_placeholder_template(template_path, output_path, project, field_list):
     temp_dir = output_path.replace(".docx", "_temp")
     unzip_docx(template_path, temp_dir)  # 解压原始 .docx
     print("🔍 解压完成，开始处理字段替换...")
-
-    # **转换 field_list 为字典**
-    data_map = {item['code']: item for item in field_list if item.get('code') is not None}
-    print(f"📌 解析字段完成，共 {len(data_map)} 个字段.")
 
     # **安全获取 manufacturing_process 并解析**
     manufacturing_process_data = data_map.get("manufacturing_process", {}).get("custom_value", "N/A")

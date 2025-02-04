@@ -1,4 +1,3 @@
-import sys
 import subprocess
 import time
 import atexit
@@ -41,20 +40,20 @@ with app.app_context():
 # 捕获 SQLAlchemy 的日志
 logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
-# ============ 确保 UNO 模块可以找到 =============
-LIBREOFFICE_PROGRAM_PATH = app.config['LIBREOFFICE_LIB_PATH']
-
-if LIBREOFFICE_PROGRAM_PATH not in sys.path:
-    sys.path.append(LIBREOFFICE_PROGRAM_PATH)
-    logger.info(f"✅ 已将 LibreOffice `program` 目录添加到 sys.path: {LIBREOFFICE_PROGRAM_PATH}")
-
-try:
-    import uno
-    from com.sun.star.beans import PropertyValue
-    logger.info("✅ UNO 模块导入成功！")
-except ImportError as e:
-    logger.error("❌ UNO 模块导入失败，请检查 LibreOffice 是否正确安装:", e)
-    sys.exit(1)
+# # ============ 确保 UNO 模块可以找到 =============
+# LIBREOFFICE_PROGRAM_PATH = app.config['LIBREOFFICE_LIB_PATH']
+#
+# if LIBREOFFICE_PROGRAM_PATH not in sys.path:
+#     sys.path.append(LIBREOFFICE_PROGRAM_PATH)
+#     logger.info(f"✅ 已将 LibreOffice `program` 目录添加到 sys.path: {LIBREOFFICE_PROGRAM_PATH}")
+#
+# try:
+#     import uno
+#     from com.sun.star.beans import PropertyValue
+#     logger.info("✅ UNO 模块导入成功！")
+# except ImportError as e:
+#     logger.error("❌ UNO 模块导入失败，请检查 LibreOffice 是否正确安装:", e)
+#     sys.exit(1)
 
 # ============ 启动 LibreOffice headless 服务 =============
 libreoffice_proc = None
