@@ -56,55 +56,55 @@ try:
 except ImportError as e:
     logger.error("❌ UNO 模块导入失败，请检查 LibreOffice 是否正确安装:", e)
     sys.exit(1)
-#
-# # ============ 启动 LibreOffice headless 服务 =============
-# libreoffice_proc = None
-#
-# def start_libreoffice():
-#     """ 启动 LibreOffice headless 服务 """
-#     global libreoffice_proc
-#     if libreoffice_proc is None:
-#         libreoffice_path = app.config["LIBREOFFICE_PATH"]
-#         cmd = [
-#             libreoffice_path,
-#             "--headless",
-#             '--accept=socket,host=localhost,port=2002;urp;',
-#             "--norestore",
-#             "--nolockcheck",
-#             "--nodefault"
-#         ]
-#         try:
-#             libreoffice_proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-#             time.sleep(3)  # 等待 LibreOffice 启动
-#             logger.info("✅ LibreOfficePortable headless 服务已启动")
-#         except Exception as e:
-#             logger.error("❌ 启动 LibreOfficePortable 失败: %s", e)
-#             libreoffice_proc = None
-#
-# def stop_libreoffice():
-#     """ 关闭 LibreOffice headless 服务 """
-#     global libreoffice_proc
-#     if libreoffice_proc:
-#         try:
-#             libreoffice_proc.terminate()
-#             libreoffice_proc.wait()
-#             logger.info("✅ LibreOfficePortable headless 服务已关闭")
-#         except Exception as e:
-#             logger.error("❌ 关闭 LibreOfficePortable 失败: %s", e)
-#         finally:
-#             libreoffice_proc = None
-#
-# # 在 Flask 第一次收到请求前，确保 LibreOffice 运行
-# @app.before_first_request
-# def ensure_libreoffice_running():
-#     logger.info("🔄 确保 LibreOffice headless 服务正在运行...")
-#     start_libreoffice()
-#
-# # 在应用启动时启动 LibreOffice
-# start_libreoffice()
-#
-# # 在应用退出时终止 LibreOffice
-# atexit.register(stop_libreoffice)
+
+# ============ 启动 LibreOffice headless 服务 =============
+libreoffice_proc = None
+
+def start_libreoffice():
+    """ 启动 LibreOffice headless 服务 """
+    global libreoffice_proc
+    if libreoffice_proc is None:
+        libreoffice_path = app.config["LIBREOFFICE_PATH"]
+        cmd = [
+            libreoffice_path,
+            "--headless",
+            '--accept=socket,host=localhost,port=2002;urp;',
+            "--norestore",
+            "--nolockcheck",
+            "--nodefault"
+        ]
+        try:
+            libreoffice_proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            time.sleep(3)  # 等待 LibreOffice 启动
+            logger.info("✅ LibreOfficePortable headless 服务已启动")
+        except Exception as e:
+            logger.error("❌ 启动 LibreOfficePortable 失败: %s", e)
+            libreoffice_proc = None
+
+def stop_libreoffice():
+    """ 关闭 LibreOffice headless 服务 """
+    global libreoffice_proc
+    if libreoffice_proc:
+        try:
+            libreoffice_proc.terminate()
+            libreoffice_proc.wait()
+            logger.info("✅ LibreOfficePortable headless 服务已关闭")
+        except Exception as e:
+            logger.error("❌ 关闭 LibreOfficePortable 失败: %s", e)
+        finally:
+            libreoffice_proc = None
+
+# 在 Flask 第一次收到请求前，确保 LibreOffice 运行
+@app.before_request
+def ensure_libreoffice_running():
+    logger.info("🔄 确保 LibreOffice headless 服务正在运行...")
+    start_libreoffice()
+
+# 在应用启动时启动 LibreOffice
+start_libreoffice()
+
+# 在应用退出时终止 LibreOffice
+atexit.register(stop_libreoffice)
 
 @app.before_request
 def log_database_setup():
