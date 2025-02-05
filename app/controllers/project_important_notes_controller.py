@@ -39,3 +39,26 @@ def save_project_important_notes(project_id, data):
         logger.error(f"保存项目技术特点失败: {str(e)}")
         raise CustomAPIException("保存失败，请重试！", 404)
 
+
+
+def get_important_notes(project_id):
+    """ 获取项目关联的技术特点（按排序） """
+    notes = ProjectImportantNote.query.filter_by(project_id=project_id).order_by(ProjectImportantNote.sort_order).all()
+    # 构造数据列表，每个条目包含模板可直接使用的字段
+    note_list = []
+    for n in notes:
+        note_list.append({
+            "note_id": n.note.id,
+            "label": n.note.label,
+            "sort_order": n.sort_order
+        })
+
+    # 将 feature_list 包装为可直接在模板中使用的上下文
+    # 如 docxtpl 中可以 {{ features }} 循环，也可以用 features.label
+    result = {
+        "important_notes": note_list
+    }
+
+    return result
+
+

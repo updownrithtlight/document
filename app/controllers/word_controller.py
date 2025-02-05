@@ -5,6 +5,8 @@ from flask_jwt_extended import jwt_required
 from urllib.parse import quote
 from app import app
 from app.controllers.project_field_controller import get_list_by_project_id
+from app.controllers.project_feature_controller import get_features
+from app.controllers.project_important_notes_controller import get_important_notes
 from app.controllers.field_definition_controller import get_fields_by_code, get_fields_h2_by_code
 from app.exceptions.exceptions import CustomAPIException
 from app.models.models import Project
@@ -72,6 +74,14 @@ def generate_tech_manual(project_id):
 
         # **保存删除后的文档**
         doc.save(output_path)  # ✅ 这里确保删除的内容被保存
+
+        features = get_features(project_id=project_id)
+        important_notes = get_important_notes(project_id=project_id)
+        context = {}
+        context.update(features)  # context 现在包含 {"features": [...]}
+        context.update(important_notes)
+
+        WordTocTool.fill_doc_with_features(output_path, context)
 
         # **更新目录**
         WordTocTool.update_toc_via_word(output_path)

@@ -3,6 +3,8 @@ import os
 import pythoncom
 import win32com.client as win32
 from docx import Document
+from docxtpl import DocxTemplate
+
 
 
 class WordTocTool:
@@ -156,6 +158,16 @@ class WordTocTool:
             return None
 
         return new_doc_path
+
+    @staticmethod
+    def fill_doc_with_features(template_path, context):
+        # 载入模板
+        doc = DocxTemplate(template_path)
+
+        # 渲染并保存
+        doc.render(context)
+        doc.save(template_path)
+
 
 
 if __name__ == "__main__":
