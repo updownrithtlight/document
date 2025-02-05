@@ -33,6 +33,20 @@ def generate_tech_manual(project_id):
             return jsonify({"error": "项目不存在"}), 404
 
         project_field_list = get_list_by_project_id(project_id)
+
+        valid_parent_ids = [3, 4, 5, 6, 7, 8]
+
+        # 1. 过滤出 parent_id 在 [3,4,5,6,7,8] 的列表
+        filtered_part_1 = [
+            item for item in project_field_list
+            if item.get("parent_id") in valid_parent_ids
+        ]
+        print("过滤完",filtered_part_1)
+        # 2. 过滤出 parent_id 不在 [3,4,5,6,7,8] 的列表
+        filtered_part_2 = [
+            item for item in project_field_list
+            if item.get("parent_id") not in valid_parent_ids
+        ]
         # **提取参数**
         today = datetime.today()
 
@@ -44,10 +58,14 @@ def generate_tech_manual(project_id):
         output_file_name = f"{project.project_model}技术说明书 {formatted_date}.docx"
         output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_file_name)
         # **转换 field_list 为字典**
-        data_map = {item['code']: item for item in project_field_list if item.get('code') is not None}
-        print(f"📌 解析字段完成，共 {len(data_map)} 个字段.")
+
+        cleaned_dict = build_cleaned_dict(filtered_part_2)
+
+        print(cleaned_dict)
         # **填充 Word 模板**
-        fill_placeholder_template(TECHNICAL_TEMPLATE_PATH, output_path, project, data_map)
+        fill_placeholder_template(TECHNICAL_TEMPLATE_PATH, output_path, project, cleaned_dict)
+
+        data_map = {item['code']: item for item in filtered_part_2 if item.get('code') is not None}
 
         try:
             doc = Document(output_path)
@@ -112,6 +130,40 @@ def generate_tech_manual(project_id):
         raise CustomAPIException(e, 404)
 
 
+def build_cleaned_dict(filtered_part_2):
+    cleaned_dict = {}
+    skip_codes = {"fuse", "conductive_pad", "factory_test_report", "test_report"}
+
+    for item in filtered_part_2:
+        code = item.get("code")
+        if code is None or code in skip_codes:
+            continue  # 跳过 code 为空的情况
+
+        # 生成字典的键，形如 "{{manufacturing_process}}"
+        dict_key = f"{{{{{code}}}}}"
+
+        if code == "manufacturing_process":
+            # 1. 取得 custom_value
+            raw_value = item.get("custom_value", "N/A")
+
+            # 2. 解析 JSON，并用 "、" 连接
+            try:
+                data_list = json.loads(raw_value) if raw_value not in ["N/A", None, ""] else []
+            except json.JSONDecodeError:
+                data_list = []
+
+            formatted_str = "、".join(data_list) if data_list else "N/A"
+
+            # 3. 特殊处理后的值赋给 cleaned_dict
+            cleaned_dict[dict_key] = formatted_str
+        else:
+            # 直接使用原 custom_value
+            cleaned_dict[dict_key] = item.get("custom_value", "")
+
+    return cleaned_dict
+
+
+
 def filter_missing_field_names(baseline_data, input_data):
     """
     过滤出在基准数据中存在，但在输入数据中没有出现的字段名称。
@@ -147,7 +199,7 @@ def filter_missing_field_h2_names(baseline_data, input_code_array):
     return missing_field_names
 
 
-def fill_placeholder_template(template_path, output_path, project, data_map):
+def fill_placeholder_template(template_path, output_path, project, field_dict):
     """
     生成 Word 文档，替换正文、表格、页眉、页脚占位符，并处理图片替换。
 
@@ -160,32 +212,6 @@ def fill_placeholder_template(template_path, output_path, project, data_map):
     # **创建临时目录**
     temp_dir = output_path.replace(".docx", "_temp")
     unzip_docx(template_path, temp_dir)  # 解压原始 .docx
-    print("🔍 解压完成，开始处理字段替换...")
-
-    # **安全获取 manufacturing_process 并解析**
-    manufacturing_process_data = data_map.get("manufacturing_process", {}).get("custom_value", "N/A")
-    try:
-        data_list = json.loads(manufacturing_process_data) if manufacturing_process_data not in ["N/A", None,
-                                                                                                 ""] else []
-    except json.JSONDecodeError:
-        data_list = []
-
-    formatted_str = "、".join(data_list) if data_list else "N/A"
-    print(formatted_str)
-
-    # **构建字段映射**
-    field_dict = {
-        "{{operating_temp}}": data_map.get("operating_temp", {}).get("custom_value", "N/A"),
-        "{{storage_temp}}": data_map.get("storage_temp", {}).get("custom_value", "N/A"),
-        "{{housing_material}}": data_map.get("housing_material", {}).get("custom_value", "N/A"),
-        "{{manufacturing_process}}": formatted_str,
-        "{{weight}}": data_map.get("weight", {}).get("custom_value", "N/A"),
-        "{{input_terminal}}": data_map.get("input_terminal", {}).get("custom_value", "N/A"),
-        "{{output_terminal}}": data_map.get("output_terminal", {}).get("custom_value", "N/A"),
-    }
-
-    print(field_dict)
-
     # **项目信息映射**
     project_placeholders = {
         "{{project_model}}": project.project_model or "N/A",
@@ -210,13 +236,10 @@ def fill_placeholder_template(template_path, output_path, project, data_map):
     print("✅ 文本占位符替换完成.")
 
     # **图片处理**
-    def safe_get(data, key, sub_key):
-        """安全获取嵌套字典值，避免 KeyError"""
-        return data.get(key, {}).get(sub_key)
 
     # 获取图片路径
-    dimensions_url = safe_get(data_map, "dimensions", "custom_value")
-    circuit_diagram_filename = safe_get(data_map, "circuit_diagram", "custom_value")
+    dimensions_url = field_dict.get("{{dimensions}}")
+    circuit_diagram_filename = field_dict.get("{{circuit_diagram}}")
 
     # 计算目标图片路径
     IMAGE_RM = os.path.join(app.config['IMAGES_FOLDER'], os.path.basename(dimensions_url)) if dimensions_url else None
