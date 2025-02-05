@@ -3,6 +3,7 @@ from app.exceptions.exceptions import CustomAPIException
 from app.models.result import ResponseTemplate
 from app.models.models import ProjectFieldValue
 import json
+from app.controllers.field_definition_controller import get_field_name_by_code
 
 
 @jwt_required()
@@ -130,3 +131,27 @@ def get_list_by_project_id(project_id):
     """ 根据 project_id 获取所有关联的 ProjectFieldValue 记录 """
     project_fields = ProjectFieldValue.query.filter_by(project_id=project_id).all()
     return [project_field.to_dict() for project_field in project_fields]
+
+
+def get_fields_by_project_id_parent_id(project_id, parent_id):
+    """
+    根据 project_id 和 parent_id 查询 t_project_field_values 表，
+    并返回一个二维列表，每个子列表包含 [code, product_code, quantity, remarks]。
+    """
+    project_fields = ProjectFieldValue.query.filter_by(
+        project_id=project_id,
+        parent_id=parent_id
+    ).all()
+
+    rows_to_add = []
+    for pf in project_fields:
+        # 如果任何字段可能为空，可使用 or "" 做兜底处理
+
+        rows_to_add.append([
+            get_field_name_by_code(pf.code) or "",
+            pf.product_code or "",
+            pf.quantity or "",
+            pf.remarks or ""
+        ])
+
+    return rows_to_add

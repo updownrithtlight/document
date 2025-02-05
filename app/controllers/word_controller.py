@@ -4,7 +4,8 @@ from flask import jsonify, send_file, request
 from flask_jwt_extended import jwt_required
 from urllib.parse import quote
 from app import app
-from app.controllers.project_field_controller import get_list_by_project_id
+from app.utils.table_operation import add_row_with_auto_serial
+from app.controllers.project_field_controller import get_list_by_project_id, get_fields_by_project_id_parent_id
 from app.controllers.project_feature_controller import get_features
 from app.controllers.project_important_notes_controller import get_important_notes
 from app.controllers.field_definition_controller import get_fields_by_code, get_fields_h2_by_code
@@ -71,6 +72,15 @@ def generate_tech_manual(project_id):
             # **删除未出现的2级标题**
             for title in target_h2_titles:
                 WordTocTool.delete_section_by_title2_or_higher(doc, title)
+            # **保存删除后的文档**
+        doc.save(output_path)  # ✅ 这里确保删除的内容被保存
+        rows_to_add =  get_fields_by_project_id_parent_id(project_id, 44)
+
+        new_row = [project.project_name, project.project_model,"1套", "粘贴标签、序列号、合格证"]
+        rows_to_add.insert(0, new_row)
+        # 3. 循环添加行
+        for row_data in rows_to_add:
+            add_row_with_auto_serial(doc, table_index=3, cell_values=row_data)
 
         # **保存删除后的文档**
         doc.save(output_path)  # ✅ 这里确保删除的内容被保存

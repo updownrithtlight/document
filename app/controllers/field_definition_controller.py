@@ -124,3 +124,11 @@ def get_fields_h2_by_code():
     # 使用字典推导，创建以 code 为键，FieldDefinition 对象的字典表示为值的字典
     fields_by_code = {item.code: item.to_dict() for item in results}
     return fields_by_code
+
+
+def get_field_name_by_code(code):
+    """ 根据 code 获取字段定义 """
+    field_definition = FieldDefinition.query.filter_by(code=code).first()
+    if not field_definition:
+        raise CustomAPIException("FieldDefinition with this code not found", 404)
+    return field_definition.field_name
