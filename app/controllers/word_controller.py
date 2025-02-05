@@ -59,11 +59,12 @@ def generate_tech_manual(project_id):
         output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_file_name)
         # **转换 field_list 为字典**
 
+        placeholders_dict = build_placeholders(filtered_part_1)
         cleaned_dict = build_cleaned_dict(filtered_part_2)
-
-        print(cleaned_dict)
+        placeholders_dict.update(cleaned_dict)
+        print(placeholders_dict)
         # **填充 Word 模板**
-        fill_placeholder_template(TECHNICAL_TEMPLATE_PATH, output_path, project, cleaned_dict)
+        fill_placeholder_template(TECHNICAL_TEMPLATE_PATH, output_path, project, placeholders_dict)
 
         data_map = {item['code']: item for item in filtered_part_2 if item.get('code') is not None}
 
@@ -161,6 +162,56 @@ def build_cleaned_dict(filtered_part_2):
             cleaned_dict[dict_key] = item.get("custom_value", "")
 
     return cleaned_dict
+
+def build_placeholders(records):
+    """
+    :param records: 列表，形如:
+        [
+          {
+            'code': 'PCV',
+            'min_value': '1',
+            'typical_value': '1',
+            'max_value': '1',
+            'unit': None,
+            'description': '11',
+            ...
+          },
+          ...
+        ]
+    :return: 一个字典，如:
+        {
+          '{{PCV1}}': '1',
+          '{{PCV2}}': '1',
+          '{{PCV3}}': '1',
+          '{{PCV4}}': '--',
+          '{{PCV5}}': '11',
+          '{{PCC1}}': '1',
+          ...
+        }
+    """
+    result = {}
+    for item in records:
+        # 1. 获取 code
+        code = item.get('code')
+        if not code:
+            # 如果没有 code，跳过或根据需求自行处理
+            continue
+
+        # 2. 逐个生成 5 个键 -> 值
+        # 如果字段值为空或 None，就使用 "--"
+        min_val = item.get('min_value') or "--"
+        typ_val = item.get('typical_value') or "--"
+        max_val = item.get('max_value') or "--"
+        unit_val = item.get('unit') or "--"
+        desc_val = item.get('description') or "--"
+
+        result[f"{{{{{code}1}}}}"] = min_val
+        result[f"{{{{{code}2}}}}"] = typ_val
+        result[f"{{{{{code}3}}}}"] = max_val
+        result[f"{{{{{code}4}}}}"] = unit_val
+        result[f"{{{{{code}5}}}}"] = desc_val
+
+    return result
 
 
 
