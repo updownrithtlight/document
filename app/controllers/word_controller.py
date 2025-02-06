@@ -16,6 +16,8 @@ import zipfile
 import shutil
 from lxml import etree
 from docx import Document
+
+from app.utils.word_table_processor import WordTableProcessor
 from app.utils.word_toc_tool import WordTocTool
 
 # **模板文件路径**
@@ -33,7 +35,12 @@ def generate_tech_manual(project_id):
             return jsonify({"error": "项目不存在"}), 404
 
         project_field_list = get_list_by_project_id(project_id)
+        valid_field_ids = [3,4,5,6,7,8]
 
+        table_part_ = [
+            item for item in project_field_list
+            if item.get("field_id") in valid_field_ids
+        ]
         valid_parent_ids = [3, 4, 5, 6, 7, 8]
 
         # 1. 过滤出 parent_id 在 [3,4,5,6,7,8] 的列表
@@ -67,7 +74,33 @@ def generate_tech_manual(project_id):
         fill_placeholder_template(TECHNICAL_TEMPLATE_PATH, output_path, project, placeholders_dict)
 
         data_map = {item['code']: item for item in filtered_part_2 if item.get('code') is not None}
-
+        headings = [
+            "电源部分",
+            "信号部分",
+            "电源输入特性",
+            "电源输出特性",
+            "特殊功能",
+            "隔离特性"
+        ]
+        table_part_ids = [item["field_id"] for item in table_part_]
+        print(table_part_ids)
+        id_map = {
+            3: "电源部分",
+            4: "信号部分",
+            5: "电源输入特性",
+            6: "电源输出特性",
+            7: "特殊功能",
+            8: "隔离特性"
+        }
+        # 假设这两个标题用户未填写，需要删除相应区段
+        missing_headings = demo_missing_headings(headings, id_map,table_part_ids)
+        processor = WordTableProcessor(doc_path=output_path, table_index=2)
+        # 调用方法进行处理并保存
+        processor.process_missing_sections(
+            headings=headings,
+            missing_headings=missing_headings,
+            output_path=output_path
+        )
         try:
             doc = Document(output_path)
         except Exception as e:
@@ -129,6 +162,35 @@ def generate_tech_manual(project_id):
 
     except Exception as e:
         raise CustomAPIException(e, 404)
+
+
+def demo_missing_headings(headings, id_to_name, table_part_ids):
+    """
+    根据给定的标题顺序(headings)、ID->标题字典(id_to_name)，以及用户已填写的ID列表(table_part_ids)，
+    计算并返回“未填写”的标题列表。
+
+    :param headings:       list[str]  所有标题（有固定顺序）
+    :param id_to_name:     dict[int, str]  映射：ID -> 对应标题
+    :param table_part_ids: list[int]  数据库查询得到的已填写标题的ID列表
+
+    :return missing_headings: list[str]  未填写的标题名称列表
+    """
+    # 1) 将“已填写”的 ID 转成“已填写的标题”列表
+    #    注：如果有ID在 id_to_name 中未找到，也可视情况处理，这里简单过滤
+    found_headings = []
+    for _id in table_part_ids:
+        if _id in id_to_name:
+            found_headings.append(id_to_name[_id])
+        else:
+            # 如果出现异常ID，不在字典中，可选择跳过或报错
+            pass
+
+    # 2) 用集合操作计算“所有标题”与“已填写标题”的差集
+    missing_set = set(headings) - set(found_headings)
+    # 再转回列表；如果想保持标题在 headings 中的原始顺序，可做个排序
+    missing_headings = [h for h in headings if h in missing_set]
+
+    return missing_headings
 
 
 def build_cleaned_dict(filtered_part_2):
