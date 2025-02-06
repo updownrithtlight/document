@@ -70,8 +70,11 @@ def generate_tech_manual(project_id):
         cleaned_dict = build_cleaned_dict(filtered_part_2)
         placeholders_dict.update(cleaned_dict)
         print(placeholders_dict)
+        important_notes = get_important_notes(project_id=project_id)
+
+        flag = check_note_id_8(important_notes)
         # **填充 Word 模板**
-        fill_placeholder_template(TECHNICAL_TEMPLATE_PATH, output_path, project, placeholders_dict)
+        fill_placeholder_template(TECHNICAL_TEMPLATE_PATH, output_path, project, placeholders_dict, flag)
 
         data_map = {item['code']: item for item in filtered_part_2 if item.get('code') is not None}
         headings = [
@@ -138,7 +141,7 @@ def generate_tech_manual(project_id):
         doc.save(output_path)  # ✅ 这里确保删除的内容被保存
 
         features = get_features(project_id=project_id)
-        important_notes = get_important_notes(project_id=project_id)
+        # important_notes = get_important_notes(project_id=project_id)
         context = {}
         context.update(features)  # context 现在包含 {"features": [...]}
         context.update(important_notes)
@@ -162,6 +165,20 @@ def generate_tech_manual(project_id):
 
     except Exception as e:
         raise CustomAPIException(e, 404)
+
+
+def check_note_id_8(important_notes):
+    """
+    important_notes: 期望是一个list，每个元素都是dict
+    """
+    for item in important_notes.get("important_notes"):
+        if not isinstance(item, dict):
+            # item 不是dict，可能是字符串或其他类型，做一下容错或抛异常
+            continue
+        if item.get("note_id") == 8:
+            return True
+    return False
+
 
 
 def demo_missing_headings(headings, id_to_name, table_part_ids):
@@ -312,7 +329,7 @@ def filter_missing_field_h2_names(baseline_data, input_code_array):
     return missing_field_names
 
 
-def fill_placeholder_template(template_path, output_path, project, field_dict):
+def fill_placeholder_template(template_path, output_path, project, field_dict, flag):
     """
     生成 Word 文档，替换正文、表格、页眉、页脚占位符，并处理图片替换。
 
@@ -406,7 +423,6 @@ def replace_docx_text(xml_path, replacements):
 
     with open(xml_path, "w", encoding="utf-8") as f:
         f.write(xml_content)
-
 
 
 def replace_images_in_docx(docx_path, replacements):
