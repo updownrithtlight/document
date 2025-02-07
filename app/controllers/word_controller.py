@@ -4,6 +4,7 @@ from flask import jsonify, send_file, request
 from flask_jwt_extended import jwt_required
 from urllib.parse import quote
 from app import app
+from app.utils.remove_image import process_section_by_marker
 from app.utils.table_operation import add_row_with_auto_serial
 from app.controllers.project_field_controller import get_list_by_project_id, get_fields_by_project_id_parent_id
 from app.controllers.project_feature_controller import get_features
@@ -70,11 +71,9 @@ def generate_tech_manual(project_id):
         cleaned_dict = build_cleaned_dict(filtered_part_2)
         placeholders_dict.update(cleaned_dict)
         print(placeholders_dict)
-        important_notes = get_important_notes(project_id=project_id)
 
-        flag = check_note_id_8(important_notes)
         # **填充 Word 模板**
-        fill_placeholder_template(TECHNICAL_TEMPLATE_PATH, output_path, project, placeholders_dict, flag)
+        fill_placeholder_template(TECHNICAL_TEMPLATE_PATH, output_path, project, placeholders_dict)
 
         data_map = {item['code']: item for item in filtered_part_2 if item.get('code') is not None}
         headings = [
@@ -142,12 +141,16 @@ def generate_tech_manual(project_id):
 
         features = get_features(project_id=project_id)
         # important_notes = get_important_notes(project_id=project_id)
+        important_notes = get_important_notes(project_id=project_id)
+
+        flag = check_note_id_8(important_notes)
         context = {}
         context.update(features)  # context 现在包含 {"features": [...]}
         context.update(important_notes)
 
         WordTocTool.fill_doc_with_features(output_path, context)
-
+        marker_text = "### DELETE HERE ###"
+        process_section_by_marker(output_path, marker_text, flag)
         # **更新目录**
         WordTocTool.update_toc_via_word(output_path)
 
@@ -176,8 +179,8 @@ def check_note_id_8(important_notes):
             # item 不是dict，可能是字符串或其他类型，做一下容错或抛异常
             continue
         if item.get("note_id") == 8:
-            return True
-    return False
+            return False
+    return True
 
 
 
@@ -329,7 +332,7 @@ def filter_missing_field_h2_names(baseline_data, input_code_array):
     return missing_field_names
 
 
-def fill_placeholder_template(template_path, output_path, project, field_dict, flag):
+def fill_placeholder_template(template_path, output_path, project, field_dict):
     """
     生成 Word 文档，替换正文、表格、页眉、页脚占位符，并处理图片替换。
 
