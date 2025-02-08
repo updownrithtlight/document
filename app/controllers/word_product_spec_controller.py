@@ -37,6 +37,26 @@ def generate_product_spec(project_id):
             return jsonify({"error": "项目不存在"}), 404
 
         project_field_list = get_list_by_project_id(project_id)
+
+        valid_field_ids = [3, 4, 5, 6, 7, 8]
+
+        table_part_ = [
+            item for item in project_field_list
+            if item.get("field_id") in valid_field_ids
+        ]
+        valid_parent_ids = [3, 4, 5, 6, 7, 8]
+
+        # 1. 过滤出 parent_id 在 [3,4,5,6,7,8] 的列表
+        filtered_part_1 = [
+            item for item in project_field_list
+            if item.get("parent_id") in valid_parent_ids
+        ]
+        print("过滤完", filtered_part_1)
+        # 2. 过滤出 parent_id 不在 [3,4,5,6,7,8] 的列表
+        filtered_part_2 = [
+            item for item in project_field_list
+            if item.get("parent_id") not in valid_parent_ids
+        ]
         today = datetime.today()
 
         # 生成格式化的日期字符串
@@ -48,10 +68,93 @@ def generate_product_spec(project_id):
         output_file_name = f"{project.project_model}产品规范 {formatted_date}.docx"
         output_path = os.path.join(app.config['OUTPUT_FOLDER'], output_file_name)
 
+        placeholders_dict = build_placeholders(filtered_part_1)
+        cleaned_dict = build_cleaned_dict(filtered_part_2)
+        placeholders_dict.update(cleaned_dict)
+        print(placeholders_dict)
+
         # **填充 Word 模板**
-        fill_placeholder_template(PRODUCT_SPECIFICATION_TEMPLATE_PATH, output_path, project, project_field_list)
+        fill_placeholder_template(PRODUCT_SPECIFICATION_TEMPLATE_PATH, output_path, project, placeholders_dict)
+
+        data_map = {item['code']: item for item in filtered_part_2 if item.get('code') is not None}
+        headings = [
+            "电源部分",
+            "信号部分",
+            "电源输入特性",
+            "电源输出特性",
+            "特殊功能",
+            "隔离特性"
+        ]
+        table_part_ids = [item["field_id"] for item in table_part_]
+        print(table_part_ids)
+        id_map = {
+            3: "电源部分",
+            4: "信号部分",
+            5: "电源输入特性",
+            6: "电源输出特性",
+            7: "特殊功能",
+            8: "隔离特性"
+        }
+        # 假设这两个标题用户未填写，需要删除相应区段
+        missing_headings = demo_missing_headings(headings, id_map, table_part_ids)
+        processor = WordTableProcessor(doc_path=output_path, table_index=1)
+        # 调用方法进行处理并保存
+        processor.process_missing_sections(
+            headings=headings,
+            missing_headings=missing_headings,
+            output_path=output_path
+        )
+        try:
+            doc = Document(output_path)
+        except Exception as e:
+            print("❌ 加载文档失败：", e)
+            return None
+
+        data_source_map = get_fields_by_code()
+
+        target_titles = filter_missing_field_names(data_source_map, data_map)
+        print(f"📌 需要删除的标题: {target_titles}")
+
+        # **删除未出现的1级标题**
+        for title in target_titles:
+            WordTocTool.delete_section_by_title(doc, title)
+
+        data_source_h2_map = get_fields_h2_by_code()
+        environmental_characteristics = data_map.get("environmental_characteristics", {}).get("custom_value", "N/A")
+
+        target_h2_titles = filter_missing_field_h2_names(data_source_h2_map, environmental_characteristics)
+        if target_h2_titles != "":
+            # **删除未出现的2级标题**
+            for title in target_h2_titles:
+                WordTocTool.delete_section_by_title2_or_higher(doc, title)
+            # **保存删除后的文档**
+        doc.save(output_path)  # ✅ 这里确保删除的内容被保存
+        rows_to_add = get_fields_by_project_id_parent_id(project_id, 44)
+
+        new_row = [project.project_name, project.project_model, "1套", "粘贴标签、序列号、合格证"]
+        rows_to_add.insert(0, new_row)
+        # 3. 循环添加行
+        for row_data in rows_to_add:
+            add_row_with_auto_serial(doc, table_index=3, cell_values=row_data)
+
+        # **保存删除后的文档**
+        doc.save(output_path)  # ✅ 这里确保删除的内容被保存
+
+        features = get_features(project_id=project_id)
+        # important_notes = get_important_notes(project_id=project_id)
+        important_notes = get_important_notes(project_id=project_id)
+
+        flag = check_note_id_8(important_notes)
+        context = {}
+        context.update(features)  # context 现在包含 {"features": [...]}
+        context.update(important_notes)
+
+        WordTocTool.fill_doc_with_features(output_path, context)
+        marker_text = "### DELETE HERE ###"
+        process_section_by_marker(output_path, marker_text, flag)
         # **更新目录**
         WordTocTool.update_toc_via_word(output_path)
+
         # **URL 编码文件名，避免中文乱码**
         encoded_file_name = quote(output_file_name)
 
@@ -65,7 +168,7 @@ def generate_product_spec(project_id):
         return response
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        raise CustomAPIException(e, 404)
 
 
 def check_note_id_8(important_notes):
@@ -270,20 +373,24 @@ def fill_placeholder_template(template_path, output_path, project, field_dict):
 
     # 获取图片路径
     dimensions_url = field_dict.get("{{dimensions}}")
+    marking_image = field_dict.get("{{marking_image}}")
     circuit_diagram_filename = field_dict.get("{{circuit_diagram}}")
 
     # 计算目标图片路径
     IMAGE_RM = os.path.join(app.config['IMAGES_FOLDER'], os.path.basename(dimensions_url)) if dimensions_url else None
+    IMAGE2_RM = os.path.join(app.config['IMAGES_FOLDER'], os.path.basename(marking_image)) if marking_image else None
     EMF_RM = os.path.join(app.config['EMF_FOLDER'], circuit_diagram_filename) if circuit_diagram_filename else None
 
     # **处理图片替换或删除**
     replacements_dict = {}
 
     if dimensions_url:
-        replacements_dict["image1.png"] = IMAGE_RM
+        replacements_dict["image2.png"] = IMAGE_RM
+    if marking_image:
+        replacements_dict["image3.png"] = IMAGE2_RM
 
     if circuit_diagram_filename:
-        replacements_dict["image2.emf"] = EMF_RM
+        replacements_dict["image1.emf"] = EMF_RM
 
 
     # **执行图片替换**

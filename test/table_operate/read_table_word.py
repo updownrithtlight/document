@@ -116,31 +116,31 @@ def _apply_font_style(cell, font_name="宋体", font_size_pt=12):
 
 
 def main():
-    doc_path = "technical_document_template.docx"
+    doc_path = "product_specification.docx"
     print("=== 打印所有表格的内容 ===")
     list_tables(doc_path)
-    # 1. 打开 Word 文档
-    doc_path = "technical_document_template.docx"
-    doc = Document(doc_path)
-
-    # 2. 待添加的数据（不含第一列，因为第一列会自动编序号）
-    rows_to_add = [
-        ["电源滤波组件", "MTLB32B-HNBJ-..."],
-        ["保险管", "12.5A"],
-        ["导电材料", "/"],
-        ["出厂检测报告", "/"],
-        ["试验报告", "/"],
-        ["纸质合格证", "/"],
-    ]
-
-    # 3. 逐行添加数据到第 0 个表格（如果你的目标是第 2 个表格，就改成 table_index=1）
-    for row_data in rows_to_add:
-        add_row_with_auto_serial(doc, table_index=3, cell_values=row_data)
-
-    # 4. 保存结果
-    output_path = "auto_serial_result.docx"
-    doc.save(output_path)
-    print(f"已在表格中添加新行，并自动编号和设置字体，结果保存为：{output_path}")
+    # # 1. 打开 Word 文档
+    # doc_path = "technical_document_template.docx"
+    # doc = Document(doc_path)
+    #
+    # # 2. 待添加的数据（不含第一列，因为第一列会自动编序号）
+    # rows_to_add = [
+    #     ["电源滤波组件", "MTLB32B-HNBJ-..."],
+    #     ["保险管", "12.5A"],
+    #     ["导电材料", "/"],
+    #     ["出厂检测报告", "/"],
+    #     ["试验报告", "/"],
+    #     ["纸质合格证", "/"],
+    # ]
+    #
+    # # 3. 逐行添加数据到第 0 个表格（如果你的目标是第 2 个表格，就改成 table_index=1）
+    # for row_data in rows_to_add:
+    #     add_row_with_auto_serial(doc, table_index=3, cell_values=row_data)
+    #
+    # # 4. 保存结果
+    # output_path = "auto_serial_result.docx"
+    # doc.save(output_path)
+    # print(f"已在表格中添加新行，并自动编号和设置字体，结果保存为：{output_path}")
 
 
 if __name__ == "__main__":
