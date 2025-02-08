@@ -4,8 +4,10 @@ from flask import jsonify, send_file, request
 from flask_jwt_extended import jwt_required
 from urllib.parse import quote
 from app import app
+from app.controllers.inspection_controller import  get_inspections_by_project_id
 from app.utils.docx_processor import DocxProcessor
 from app.utils.remove_image import process_section_by_marker
+from app.utils.spec_word_table_processor import SpecWordTableProcessor
 from app.utils.table_operation import add_row_with_auto_serial
 from app.controllers.project_field_controller import get_list_by_project_id, get_fields_by_project_id_parent_id
 from app.controllers.project_feature_controller import get_features
@@ -129,6 +131,7 @@ def generate_product_spec(project_id):
                 WordTocTool.delete_section_by_title2_or_higher(doc, title)
             # **保存删除后的文档**
         doc.save(output_path)  # ✅ 这里确保删除的内容被保存
+
         rows_to_add = get_fields_by_project_id_parent_id(project_id, 44)
 
         new_row = [project.project_name, project.project_model, "1套", "粘贴标签、序列号、合格证"]
@@ -152,6 +155,14 @@ def generate_product_spec(project_id):
         WordTocTool.fill_doc_with_features(output_path, context)
         marker_text = "### DELETE HERE ###"
         process_section_by_marker(output_path, marker_text, flag)
+
+        p_inspections = get_inspections_by_project_id(project_id)
+        print(p_inspections)
+        # 处理文档
+        processor = SpecWordTableProcessor(output_path)
+        target_table_index =4
+        processor.process_table(p_inspections, target_table_index=target_table_index)
+        processor.save(output_path)
         # **更新目录**
         WordTocTool.update_toc_via_word(output_path)
 
@@ -169,6 +180,8 @@ def generate_product_spec(project_id):
 
     except Exception as e:
         raise CustomAPIException(e, 404)
+
+
 
 
 def check_note_id_8(important_notes):

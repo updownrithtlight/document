@@ -47,3 +47,13 @@ def save_project_inspections(project_id):
     except Exception as e:
         db.session.rollback()
         return ResponseTemplate.error(message=f"数据保存失败: {str(e)}")
+
+
+def get_inspections_by_project_id(project_id):
+    inspections = ProjectInspection.query.filter_by(project_id=project_id).all()
+    return [i.to_dict() for i in inspections]
+
+
+def get_all_inspection_items():
+    items = InspectionItem.query.all()
+    return [i.to_dict() for i in items]
