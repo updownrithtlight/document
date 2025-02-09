@@ -1,10 +1,10 @@
 import os
-
 import pythoncom
 import win32com.client as win32
 from docx import Document
 from docxtpl import DocxTemplate
 
+from app import logger
 
 
 class WordTocTool:
@@ -33,55 +33,76 @@ class WordTocTool:
 
     @staticmethod
     def update_toc_via_word(doc_path):
-        """
-        利用 Microsoft Word COM 自动化接口更新文档目录（TOC）。
-        打开指定文档，调用目录的 Update 方法后保存并关闭文档。
-
-        在调用 COM 相关接口前，先调用 pythoncom.CoInitialize() 初始化 COM，
-        最后使用 pythoncom.CoUninitialize() 释放资源。
-        """
-        # 初始化 COM（确保当前线程已初始化 COM）
         pythoncom.CoInitialize()
+        word = None
+        doc = None
         try:
             abs_path = os.path.abspath(doc_path)
-            print("启动 Word 应用程序...")
+
+            # 检查文件路径和权限
+            if not os.path.exists(abs_path):
+                logger.error(f"❌ 文件路径不存在：{abs_path}")
+                return False
+            if not os.access(abs_path, os.R_OK):
+                logger.error(f"❌ 无法读取文件：{abs_path}")
+                return False
+            if not os.access(abs_path, os.W_OK):
+                logger.error(f"❌ 无法写入文件：{abs_path}")
+                return False
+
+            # 检查文件是否被占用
+            def is_file_locked(filepath):
+                try:
+                    with open(filepath, "r+"):
+                        return False
+                except IOError:
+                    return True
+
+            if is_file_locked(abs_path):
+                logger.error(f"❌ 文件被占用：{abs_path}")
+                return False
+
+            logger.info("启动 Word 应用程序...")
             word = win32.Dispatch("Word.Application")
-            word.Visible = False  # 后台运行
+            word.Visible = False
 
             try:
-                print("打开文档：", abs_path)
+                logger.info(f"尝试打开文档：{abs_path}")
                 doc = word.Documents.Open(abs_path)
+                if not doc:
+                    logger.error(f"❌ 无法打开文档，返回值为空：{abs_path}")
+                    return False
             except Exception as e:
-                print("❌ 打开文档失败：", e)
-                word.Quit()
+                logger.error(f"❌ 打开文档失败：{e}")
                 return False
 
             try:
                 if doc.TablesOfContents.Count > 0:
+                    logger.info("更新目录 TOC ...")
                     toc = doc.TablesOfContents(1)
-                    print("更新目录 TOC ...")
                     toc.Update()
                 else:
-                    print("文档中没有目录 TOC")
-                print("保存文档...")
+                    logger.warning("文档中没有目录 TOC")
+                logger.info("保存文档...")
                 doc.Save()
             except Exception as e:
-                print("❌ 更新目录失败：", e)
-                doc.Close(False)
-                word.Quit()
+                logger.error(f"❌ 更新目录失败：{e}")
                 return False
 
             try:
                 doc.Close(False)
-                print("关闭文档成功。")
+                logger.info("关闭文档成功。")
             except Exception as e:
-                print("关闭文档时出现异常：", e)
+                logger.error(f"关闭文档时出现异常：{e}")
             finally:
-                word.Quit()
-                print("Word 应用程序已退出。")
+                if word:
+                    word.Quit()
+                    logger.info("Word 应用程序已退出。")
             return True
+        except Exception as e:
+            logger.error(f"❌ 未知错误：{e}", exc_info=True)
+            return False
         finally:
-            # 清理 COM 初始化
             pythoncom.CoUninitialize()
 
     @staticmethod

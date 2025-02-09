@@ -1,4 +1,5 @@
 import json
+import time
 from datetime import datetime
 from flask import jsonify, send_file
 from flask_jwt_extended import jwt_required
@@ -173,6 +174,24 @@ def generate_document(project_id):
     except Exception as e:
         raise CustomAPIException(e, 404)
 
+def create_update_toc_task(doc_path):
+    """
+    将更新目录任务写入任务文件夹
+    """
+    try:
+        task_folder = app.config['OUTPUT_FOLDER']  # 定义任务文件夹路径
+        os.makedirs(task_folder, exist_ok=True)  # 确保任务文件夹存在
+
+        # 创建任务文件
+        task_file = os.path.join(task_folder, f"task_{int(time.time())}.json")
+        task_data = {"doc_path": doc_path}
+
+        with open(task_file, "w") as f:
+            json.dump(task_data, f)
+
+        logger.info(f"✅ 创建更新目录任务成功：{task_file}")
+    except Exception as e:
+        logger.error(f"❌ 创建任务失败：{e}")
 
 def send_document_response(file_path, file_name):
     """
