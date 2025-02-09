@@ -3,7 +3,7 @@ from datetime import datetime
 from flask import jsonify, send_file, request
 from flask_jwt_extended import jwt_required
 from urllib.parse import quote
-from app import app
+from app import app, logger
 from app.controllers.inspection_controller import  get_inspections_by_project_id
 from app.utils.docx_processor import DocxProcessor
 from app.utils.remove_image import process_section_by_marker
@@ -30,6 +30,23 @@ PRODUCT_SPECIFICATION_TEMPLATE_PATH = os.path.join(app.config['TEMPLATE_FOLDER']
 
 @jwt_required()
 def generate_product_spec(project_id):
+    """
+    整合文档生成和响应处理逻辑
+    """
+    try:
+        # 生成文档
+        output_path, output_file_name = generate_document(project_id)
+
+        # 返回文件响应
+        return send_document_response(output_path, output_file_name)
+
+    except CustomAPIException as e:
+        logger.error(f"生成技术说明书失败: {e}")
+        raise e
+
+
+@jwt_required()
+def generate_document(project_id):
     """
     生成产品规范 Word 文档
     """
@@ -166,22 +183,26 @@ def generate_product_spec(project_id):
         # **更新目录**
         WordTocTool.update_toc_via_word(output_path)
 
-        # **URL 编码文件名，避免中文乱码**
-        encoded_file_name = quote(output_file_name)
+        return output_path, output_file_name
+    except Exception as e:
+        raise CustomAPIException(e, 404)
 
-        # **返回文件**
+
+def send_document_response(file_path, file_name):
+    """
+    发送生成的文档文件作为响应
+    """
+    try:
+        encoded_file_name = quote(file_name)
         response = send_file(
-            output_path,
+            file_path,
             as_attachment=True,
             mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         )
         response.headers["Content-Disposition"] = f"attachment; filename*=UTF-8''{encoded_file_name}"
         return response
-
     except Exception as e:
-        raise CustomAPIException(e, 404)
-
-
+        raise CustomAPIException(f"文件响应失败: {str(e)}", 500)
 
 
 def check_note_id_8(important_notes):
