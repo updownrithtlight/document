@@ -152,7 +152,6 @@ def convert_xls_to_xlsx(xls_path):
         print(f"❌ LibreOffice 转换失败: {str(e)}")
         return None
 
-
 @jwt_required()
 def import_materials():
     """ 处理 Excel / CSV 文件上传并存储到数据库 """
@@ -215,27 +214,31 @@ def import_materials():
         # **重命名列**
         df = df.rename(columns=column_mapping)
 
-        # **批量插入数据**
-        new_materials = [
-            MaterialInfo(
-                material_code=row["material_code"],
-                material_name=row["material_name"],
-                model_specification=row.get("model_specification", None),
-                unit=row.get("unit", None),
-            )
-            for _, row in df.iterrows()
-        ]
+        for _, row in df.iterrows():
+            existing = MaterialInfo.query.filter_by(material_code=row["material_code"]).first()
+            if existing:
+                # 更新已存在记录
+                existing.material_name = row["material_name"]
+                existing.model_specification = row.get("model_specification", None)
+                existing.unit = row.get("unit", None)
+            else:
+                # 插入新记录
+                new_material = MaterialInfo(
+                    material_code=row["material_code"],
+                    material_name=row["material_name"],
+                    model_specification=row.get("model_specification", None),
+                    unit=row.get("unit", None),
+                )
+                db.session.add(new_material)
 
-        db.session.bulk_save_objects(new_materials)
         db.session.commit()
 
-        return ResponseTemplate.success(message="数据导入成功", data={"imported_rows": len(new_materials)})
+        return ResponseTemplate.success(message="数据导入完成")
 
     except SQLAlchemyError as e:
         db.session.rollback()
         logger.error(f"数据库错误: {str(e)}")
         raise CustomAPIException("数据库操作失败，请检查数据格式或联系管理员", 500)
-
 
     except Exception as e:
         logger.error(f"数据导入失败: {str(e)}")
