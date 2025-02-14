@@ -1,5 +1,6 @@
 from docx import Document
 
+
 class SpecWordTableProcessor:
     def __init__(self, file_path):
         """
@@ -53,8 +54,15 @@ class SpecWordTableProcessor:
                         row.cells[3].text = boolean_map[item['afterLabel']]
                         row.cells[4].text = item['samplePlan']
 
+                        for cell in row.cells:
+                            set_cell_font(cell, font_name="Times New Roman", font_size=12)  # 小四对应 12 磅
+
         # 删除不需要的行
         for row in rows_to_delete:
+            delete_title = row.cells[0].text
+            if delete_title == "外形尺寸":
+                delete_title = "外形尺寸（单位：mm）"
+            delete_section_by_title(self.doc,target_title=delete_title,heading_level="Heading 2")
             target_table._element.remove(row._element)
 
     def save(self, output_path):
@@ -64,3 +72,84 @@ class SpecWordTableProcessor:
         :return: None
         """
         self.doc.save(output_path)
+
+def delete_section_by_title(doc, target_title, heading_level="Heading 1"):
+    """
+    删除 Word 文档中特定标题及其后续内容，直到下一个相同级别的标题。
+    包括删除段落和表格。
+
+    :param doc: Word 文档对象
+    :param target_title: 要删除的标题文本
+    :param heading_level: 要匹配的标题级别（默认 "Heading 1"）
+    """
+
+    def delete_element(element):
+        """删除指定的元素（段落或表格）"""
+        parent = element.getparent()
+        if parent is not None:
+            parent.remove(element)
+
+    delete_flag = False  # 标志是否处于删除范围
+
+    # 遍历文档的 body 元素（包括段落和表格）
+    for element in list(doc._element.body):
+        if element.tag.endswith("p"):  # 段落
+            # 获取段落对象（从 XML 元素映射回段落）
+            para = next((p for p in doc.paragraphs if p._element == element), None)
+            if para is None:
+                continue
+
+            if para.style.name == heading_level:  # 检查是否是标题
+                if para.text.strip() == target_title:  # 找到目标标题
+                    delete_flag = True
+                else:
+                    delete_flag = False  # 遇到下一个同级标题，停止删除
+
+            if delete_flag:
+                delete_element(element)
+
+        elif element.tag.endswith("tbl"):  # 表格
+            if delete_flag:
+                delete_element(element)
+
+
+from docx.shared import Pt
+from docx.oxml.ns import qn
+def set_cell_font(cell, font_name, font_size):
+    """
+    设置单元格文本的字体和字号
+    :param cell: 目标单元格
+    :param font_name: 字体名称，例如 "Times New Roman"
+    :param font_size: 字号，例如 12（表示小四）
+    """
+    for paragraph in cell.paragraphs:
+        for run in paragraph.runs:
+            run.font.name = font_name
+            run._element.rPr.rFonts.set(qn('w:eastAsia'), font_name)  # 兼容中文字体
+            run.font.size = Pt(font_size)
+
+
+def update_table_captions_and_references(doc):
+    """
+    同步 Word 文档中的表格题注序号和交叉引用。
+    :param doc: Document 对象
+    """
+    # Step 1: 查找所有表格并重新生成题注
+    caption_prefix = "表"
+    table_count = 0
+    for paragraph in doc.paragraphs:
+        if "表" in paragraph.text and "SEQ" in paragraph._element.xml:  # 查找题注字段
+            table_count += 1
+            # 更新题注内容
+            new_caption = f"{caption_prefix} {table_count}"
+            paragraph.text = new_caption
+
+    # Step 2: 查找交叉引用并更新序号
+    for paragraph in doc.paragraphs:
+        if caption_prefix in paragraph.text and "REF" in paragraph._element.xml:  # 查找交叉引用字段
+            # 找到并替换为正确的表序号
+            ref_text = paragraph.text.split()[0]
+            if ref_text.startswith(caption_prefix):
+                paragraph.text = f"{caption_prefix} {table_count}"
+
+
