@@ -4,3 +4,5 @@
 打开命令行界面（如终端或命令提示符）。
 切换到你的项目目录。
 运行 pip freeze > requirements.txt 命令。
+exe命令
+pyinstaller --onefile --add-data "app;app" --add-data "instance;instance" --add-data "uploads;uploads" --add-data ".env;." --add-data "config.py;." --add-data "LibreOfficePortable;LibreOfficePortable" run.py
