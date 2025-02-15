@@ -106,10 +106,32 @@ def refresh():
 @jwt_required()
 def get_user_info():
     user_identity = get_jwt_identity()
-    return ResponseTemplate.success(
-        message="User info retrieved successfully",
-        data={"user_id": user_identity["user_id"], "roles": user_identity["roles"]}
-    )
+    user = User.query.get(int(user_identity))
+    if not user:
+        raise CustomAPIException("Material not found in the project", 404)
+    return ResponseTemplate.success(data=user.to_dict(), message="User details retrieved successfully")
+
+
+@jwt_required()
+def update_password(data):
+    user_identity = get_jwt_identity()
+    user = User.query.get(int(user_identity))
+    user_data = data.get("user")
+    if not user:
+        raise CustomAPIException("Material not found in the project", 404)
+
+    if not user or not bcrypt.check_password_hash(user.password, user_data['currentPassword']):
+        raise CustomAPIException("Invalid username or password", 401)
+
+        # 更新密码逻辑
+    try:
+        user.set_password(user_data['newPassword']) # 对新密码加密
+        db.session.add(user)
+        db.session.commit()  # 提交事务
+        return ResponseTemplate.success(message="Password updated successfully")
+    except Exception as e:
+        db.session.rollback()  # 出现异常时回滚事务
+        raise CustomAPIException(f"Failed to update password: {str(e)}", 500)
 
 
 # ✅ **用户退出登录**

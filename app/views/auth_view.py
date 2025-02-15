@@ -1,4 +1,4 @@
-from flask import Blueprint
+from flask import Blueprint, request
 from app.controllers import auth_controller
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
@@ -23,4 +23,14 @@ def refresh():
 @auth_bp.route('/logout', methods=['POST'])
 def logout():
     return auth_controller.logout()
+
+
+@auth_bp.route('/me', methods=['GET'])
+def get_user_info():
+    return auth_controller.get_user_info()
+
+@auth_bp.route('/updatePassword', methods=['POST'])
+def update_password():
+    data = request.json
+    return auth_controller.update_password(data)
 
